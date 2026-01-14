@@ -1,9 +1,10 @@
-import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import { Provider } from '@/components/ui/provider';
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Proton Checker",
-  description: "Check if your Steam Games are compatible with Linux",
+	title: 'Proton Checker',
+	description: 'Check if your Steam Games are compatible with Linux',
 };
 
 export const viewport: Viewport = {
@@ -12,13 +13,15 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<body>
+				<Provider>{children}</Provider>
+			</body>
+		</html>
+	);
 }
