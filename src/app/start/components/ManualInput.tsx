@@ -158,7 +158,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 				<Center>
 					<PrivateCaptcha
 						key={captchaKey}
-						siteKey="e88ed8ff2071457f898fab54356181b6"
+						siteKey={process.env.NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY}
 						theme="dark"
 						onFinish={handleCaptchaFinished}
 					/>

@@ -9,7 +9,7 @@ export async function register() {
 
 		//////////////////////////////////////////////////////
 		// Verify environment variables
-		const requiredEnvVars = ['MONGODB_URI', 'MONGODB_NAME', "STEAM_API_KEY", "PRIVATE_CAPTCHA_KEY", "PRIVATE_CAPTCHA_SITEKEY"];
+		const requiredEnvVars = ['MONGODB_URI', 'MONGODB_NAME', "STEAM_API_KEY", "PRIVATE_CAPTCHA_KEY", "NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY"];
 		for (const envVar of requiredEnvVars) {
 			if (!process.env[envVar]) {
 				errors.push(`Environment variable ${envVar} is not set`);
