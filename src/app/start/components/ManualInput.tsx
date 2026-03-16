@@ -69,7 +69,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 				captchaSolution: captchaSolution.current,
 			}),
 		})
-			.then((response) => {
+			.then(async (response) => {
 				if (!response.ok) {
 					switch (response.status) {
 						case 400:
@@ -79,7 +79,12 @@ export default function ManualInput({ setSyncMethod }: props) {
 							setErrorText("User not found.")
 							break;
 						case 429:
-							setErrorText("You have requested too many users. Try again in a few hours.")
+							const text = await response.text();
+							if (text == "Profile") {
+								setErrorText("This profile has been requested too many times. Try a different one.")
+							} else {
+								setErrorText("You have requested too many users. Try again in a few hours.")
+							}
 							break;
 						default:
 							setErrorText("Unexpected server error.")
@@ -89,10 +94,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 					return;
 				}
 
-				return response.json()
-			})
-			.then((data) => {
-				if (errorText) return;
+				const data = await response.json();
 
 				console.log('Loaded games successfully');
 				localStorage.setItem('games', JSON.stringify(data.games));
@@ -101,7 +103,6 @@ export default function ManualInput({ setSyncMethod }: props) {
 			})
 			.catch((error) => {
 				console.log('Error:', error);
-				setErrorText("Unexpected client error.")
 			})
 			.finally(() => {
 				reloadCaptcha();
@@ -150,7 +151,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 						<Field.ErrorText>{errorText}</Field.ErrorText>
 						<Link href='https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC' target='_blank'>
 							<Field.HelperText color={'blue.400'} cursor={'button'}>
-								How do I find this?
+								How do I find my ID?
 							</Field.HelperText>
 						</Link>
 					</Field.Root>

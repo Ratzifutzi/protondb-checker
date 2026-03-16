@@ -148,7 +148,7 @@ export default function Fetch() {
 												)}
 											</Skeleton>
 										</Card.Title>
-										<Card.Description>
+										<Card.Description color={games?.length === 0 ? "fg.error" : ""}>
 											{games?.length || 0} games on account
 											<br />
 										</Card.Description>
@@ -156,7 +156,7 @@ export default function Fetch() {
 								</Card.Root>
 
 								<VStack display={'flex'}>
-									<IconButton variant={'surface'} onClick={startFetch}>
+									<IconButton variant={'surface'} onClick={startFetch} disabled={!games || games?.length == 0}>
 										<CheckIcon />
 									</IconButton>
 									<IconButton

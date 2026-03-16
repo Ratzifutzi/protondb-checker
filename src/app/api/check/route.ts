@@ -1,6 +1,8 @@
 import { CaptchaClient } from '@/lib/captcha';
 import { steam } from '@/lib/steamApi';
+import ScanLog from '@/models/ScanLog';
 import { PageConfig } from 'next';
+import { getClientIp } from 'next-request-ip';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -8,6 +10,7 @@ export async function POST(req: NextRequest) {
 
 	const captchaSolution = body.captchaSolution;
 	let steamid = body.steamid;
+	const sixtyMinutesAgo = new Date(Date.now() - 60 * 60 * 1000);
 
 	let games = {};
 	let profile = {};
@@ -34,6 +37,17 @@ export async function POST(req: NextRequest) {
 		return new Response('Error verifying captcha', { status: 500 });
 	}
 
+	// Verify if IP ratelimits are met
+	// 15 users / IP / 60 minutes allowed
+	const ipRateLimitDocument = await ScanLog.find({
+		ipAddress: getClientIp(req.headers),
+		date: {$gte: sixtyMinutesAgo}
+	})
+	if (ipRateLimitDocument.length >= 1) {
+		console.log("IP is ratelimited");
+		return new Response(getClientIp(req.headers), { status: 429 });
+	}
+
 	// check if steamid is a valid 64-bit SteamID, if not, try to resolve it
 	if (!/^\d{17}$/.test(steamid)) {
 		try {
@@ -48,6 +62,17 @@ export async function POST(req: NextRequest) {
 		} catch {
 			return new Response('Error resolving SteamID', { status: 404 });
 		}
+	}
+
+	// Verify if profile ratelimits are met
+	// 5 profile requests / 60 minutes allowed
+	const profileRateLimitDocument = await ScanLog.find({
+		targetProfile: steamid,
+		date: {$gte: sixtyMinutesAgo}
+	})
+	if (profileRateLimitDocument.length >= 5) {
+		console.log("Profile is ratelimited");
+		return new Response('Profile', { status: 429 });
 	}
 
 		// Fetch profile
@@ -70,6 +95,14 @@ export async function POST(req: NextRequest) {
 		console.error('Error fetching user games:', steamid, error);
 		return new Response('Error fetching user games', { status: 500 });
 	}
+
+	// Log in databse
+	const logEvent = new ScanLog({
+		date: new Date(),
+		ipAddress: getClientIp(req.headers),
+		targetProfile: steamid,
+	})
+	await logEvent.save();
 
 	// Return
 	return Response.json({
