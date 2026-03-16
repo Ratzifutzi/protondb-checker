@@ -21,7 +21,7 @@ export default function CardFooter() {
 						color={'blue.400'}
 						fontSize={'sm'}
 						target="_blank"
-						href="https://github.com/"
+						href="https://github.com/Ratzifutzi/protondb-checker"
 					>
 						GitHub
 					</Link>
