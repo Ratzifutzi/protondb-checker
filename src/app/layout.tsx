@@ -19,6 +19,12 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
+			<head>
+				<script
+					defer
+					src="https://cdn.privatecaptcha.com/widget/js/privatecaptcha.js"
+				></script>
+			</head>
 			<body>
 				<Provider>{children}</Provider>
 			</body>

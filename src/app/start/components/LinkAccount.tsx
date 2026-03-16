@@ -19,9 +19,10 @@ export default function LinkAccount({ setSyncMethod }: props) {
 					fontSize={'sm'}
 					color={'blue.400'}
 				>
-					Use SteamID instead.
+					Use SteamID/Username instead.
 				</Text>
 			</HStack>
+			<Text>Coming soon. Please enter SteamID manually</Text>
 		</>
 	);
 }

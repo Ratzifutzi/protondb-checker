@@ -1,6 +1,7 @@
 'use client';
 
 import CardFooter from '@/components/partials/footer';
+import { ProtonDbArray } from '@/types/ProtonDbArray';
 import {
 	AbsoluteCenter,
 	Box,
@@ -9,12 +10,26 @@ import {
 	Center,
 	HStack,
 	Separator,
+	VStack,
 } from '@chakra-ui/react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
-	const [loadingNextPage, setLoadingNextPage] = useState(false);
+	const [loading, setLoading] = useState<boolean>(true);
+	const [protonDbInfo, setProtonDbInfo] = useState<ProtonDbArray>([]);
+	const router = useRouter()
+
+	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setLoading(true);
+		// Verify localstorage for profile and games
+		const protonDb = localStorage.getItem("protonData");
+
+		setProtonDbInfo(JSON.parse(protonDb!))
+		setLoading(false);
+	}, [router]);
 
 	return (
 		<AbsoluteCenter>
@@ -41,17 +56,28 @@ export default function Home() {
 							library to see their ProtonDB Status, useful for Linux Gaming.
 						</Card.Description>
 					</Box>
-					<>
+					<Button
+						loading={loading}
+						mb={3}
+						onClick={() => {
+							setLoading(true);
+							router.push("/start");
+						}}
+					>
+						Start{protonDbInfo && " over"}
+					</Button>
+					{(protonDbInfo && !loading) && (
 						<Button
-							loading={loadingNextPage}
+							loading={loading}
+							variant={"surface"}
 							onClick={() => {
-								setLoadingNextPage(true);
-								window.location.href = '/start';
+								setLoading(true);
+								router.push("/results");
 							}}
 						>
-							Start
+							View previous results
 						</Button>
-					</>
+					)}
 				</Card.Body>
 				<CardFooter />
 			</Card.Root>
