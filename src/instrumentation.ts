@@ -43,6 +43,7 @@ export async function register() {
 				`Preparation completed with ${errors.length} error(s). Please fix the following issues before trying again:`,
 			);
 			errors.forEach((error) => logger.error(error));
+			logger.error("Exiting now.")
 			process.exit(1);
 		}
 
