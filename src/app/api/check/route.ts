@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 		ipAddress: getClientIp(req.headers),
 		date: {$gte: sixtyMinutesAgo}
 	})
-	if (ipRateLimitDocument.length >= 1) {
+	if (ipRateLimitDocument.length >= 15) {
 		console.log("IP is ratelimited");
 		return new Response(getClientIp(req.headers), { status: 429 });
 	}
