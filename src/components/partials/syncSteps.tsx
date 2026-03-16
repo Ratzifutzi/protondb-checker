@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Center, Steps, Text } from '@chakra-ui/react';
+import { Button, Center, Link, Steps, Text } from '@chakra-ui/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -11,9 +11,7 @@ export default function SyncSteps({ currentStep }: { currentStep: number }) {
 
 	return (
 		<>
-			<Button position={"absolute"} size={"xs"} variant={"ghost"} color={"fg.subtle"} left={3} top={3} onClick={() => {
-				router.push("/")
-			}}>Start over</Button>
+			<Link position={"absolute"} left={3} top={3} fontSize={"sm"} color={"fg.subtle"} href='/'>Start over</Link>
 			<Center gap={2}>
 				<Image
 					src={'/proton-logo.svg'}

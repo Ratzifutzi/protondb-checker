@@ -54,6 +54,17 @@ export default function Fetch() {
 		setProgress(-1);
 	}, [router]);
 
+	// Prevent closing page
+	useEffect(() => {
+		if (progress > 0 && progress < 100) {
+			window.onbeforeunload = () => {
+				return "Closing this page will reset your progress."
+			}
+		} else {
+			window.onbeforeunload = null
+		}
+	}, [progress])
+
 	async function startFetch() {
 		const gamesToProcess = games || [];
 		const total = gamesToProcess.length;

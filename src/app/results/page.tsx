@@ -5,7 +5,7 @@ import CardFooter from '@/components/partials/footer';
 import SyncSteps from '@/components/partials/syncSteps';
 import MoreGameInfo from '@/types/MoreGameInfo';
 import { ProtonDbArray } from '@/types/ProtonDbArray';
-import { AbsoluteCenter, Box, Button, Card, For, HStack, Image, Text, VStack } from '@chakra-ui/react';
+import { AbsoluteCenter, Box, Button, Card, Center, For, HStack, Image, Skeleton, SkeletonText, Spinner, Text, VStack } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -76,14 +76,19 @@ export default function Start() {
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'600px'} minH={'750px'} maxH={"750px"} overflowY={"scroll"}>
+			<Card.Root width={'600px'} minH={'750px'} maxH={"750px"} overflowY={loading ? "hidden" : "scroll"}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={3} />
 					</Card.Header>
+					<SkeletonText noOfLines={1} height={21} mb={2} loading={!profile}>
+						<Card.Description textAlign={"center"}>
+							From the library of{" "}<strong>{profile?.nickname}</strong>
+						</Card.Description>
+					</SkeletonText>
 					<Box gap={2} display={"flex"} flexDirection={"column"}>
-						<HStack justifyContent={"center"}>
-							<Button variant={"surface"} disabled={loading} onClick={() => {
+						<HStack justifyContent={"center"} display={"flex"}>
+							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
 								setLoading(true);
 								const sortedGames = [...games].sort((a, b) => {
 									return b.minutes - a.minutes;
@@ -95,7 +100,7 @@ export default function Start() {
 								Sort by Playtime
 							</Button>
 
-							<Button variant={"surface"} disabled={loading} onClick={() => {
+							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
 								setLoading(true);
 								const sortedGames = [...games].sort((a, b) => {
 									const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
@@ -113,7 +118,7 @@ export default function Start() {
 								Sort by Userscore
 							</Button>
 
-							<Button variant={"surface"} disabled={loading} onClick={() => {
+							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
 								setLoading(true);
 								const sortedGames = [...games].sort((a, b) => {
 									const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
@@ -131,66 +136,81 @@ export default function Start() {
 								setGames(sortedGames);
 								setLoading(false);
 							}}>
-								Sort by medal
+								Sort by Medal
 							</Button>
 						</HStack>
-						<For each={games}>
-							{(item, index) => {
-								const protonInfo = protonDbInfo.find((e) => e.id === item.game.id);
+						{loading === false ? (
+							<For each={games}>
+								{(item, index) => {
+									const protonInfo = protonDbInfo.find((e) => e.id === item.game.id);
 
-								const rawScore = protonInfo?.score ?? 0;
-								const scoreValue = rawScore * 10;
+									const rawScore = protonInfo?.score ?? 0;
+									const scoreValue = rawScore * 10;
 
-								const tier = protonInfo?.tier ?? "unknown";
-								const validTier = tier as keyof typeof scoreColors;
-								const subtleColor = colorWithOpacity(scoreColors[validTier], 0.15);
+									const tier = protonInfo?.tier ?? "unknown";
+									const validTier = tier as keyof typeof scoreColors;
+									const subtleColor = colorWithOpacity(scoreColors[validTier], 0.15);
 
-								return (
-									<Box
-										key={index}
-										bgGradient={`to-l`}
-										gradientFrom={subtleColor}
-										gradientTo="transparent"
-										minH={"75px"}
-										border={"1px solid"}
-										borderColor={"border"}
-										borderRadius={"md"}
-										overflow={"hidden"}
-									>
-										<HStack>
-											<Image
-												src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${item.game.id}/header.jpg`}
-												height={"75px"}
-												minW={"160px"}
-												bg={"bg.emphasized"}
-												alt=' '
-											/>
-											<VStack
-												alignItems={"flex-start"}
-												gap={1}
-												flex={1}
-											>
-												<Text fontWeight={"semibold"} maxW={"290px"} overflow={"hidden"} textOverflow={"ellipsis"} whiteSpace={"nowrap"}>
-													{item.game.name}
-												</Text>
-												<Text fontSize={"sm"} color={"fg.muted"}>
+									return (
+										<Box
+											key={index}
+											bgGradient={`to-l`}
+											gradientFrom={subtleColor}
+											gradientTo="transparent"
+											minH={"75px"}
+											border={"1px solid"}
+											borderColor={"border"}
+											borderRadius={"md"}
+											overflow={"hidden"}
+										>
+											<HStack>
+												<Image
+													src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${item.game.id}/header.jpg`}
+													height={"75px"}
+													minW={"160px"}
+													bg={"bg.emphasized"}
+													alt=' '
+												/>
+												<VStack
+													alignItems={"flex-start"}
+													gap={1}
+													flex={1}
+												>
+													<Text fontWeight={"semibold"} maxW={"290px"} overflow={"hidden"} textOverflow={"ellipsis"} whiteSpace={"nowrap"}>
+														{item.game.name}
+													</Text>
+													<Text fontSize={"sm"} color={"fg.muted"}>
+														<strong>
+															{protonInfo?.tier.toUpperCase() || 'Unknown'}
+														</strong>
+														{" "} - {(item.minutes / 60).toFixed(1)}h
+													</Text>
+												</VStack>
+												<Text pr={3}>
 													<strong>
-														{protonInfo?.tier.toUpperCase() || 'Unknown'}
+														{scoreValue.toFixed(1)}
 													</strong>
-													{" "} - {(item.minutes / 60).toFixed(1)}h
+													{" "}/ 10
 												</Text>
-											</VStack>
-											<Text pr={3}>
-												<strong>
-													{scoreValue.toFixed(1)}
-												</strong>
-												{" "}/ 10
-											</Text>
-										</HStack>
-									</Box>
-								);
-							}}
-						</For>
+											</HStack>
+										</Box>
+									);
+								}}
+							</For>
+						) : (
+							<>
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+								<Skeleton height={"75px"} w={"full"} />
+							</>
+						)}
 					</Box>
 				</Card.Body>
 				<CardFooter />
