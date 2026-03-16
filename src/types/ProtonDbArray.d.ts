@@ -4,6 +4,6 @@ export type ProtonDbArray = {
 	score: number,
 	tier: string,
 	total: number,
-	trendingTier: number,
+	trendingTier: string,
 	id: number,
 }[]

@@ -1,7 +1,6 @@
-import { logger } from './lib/logger';
-
 export async function register() {
 	if (process.env.NEXT_RUNTIME === 'nodejs') {
+		const { logger } = await import('./lib/logger');
 		const { execSync } = await import('child_process');
 		const mongoose = (await import('mongoose')).default;
 

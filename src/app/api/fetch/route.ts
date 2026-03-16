@@ -1,4 +1,8 @@
+import { logger } from '@/lib/logger';
+import CachedProtonGame from '@/models/CachedProtonGame';
 import { NextRequest } from 'next/server';
+
+const millisecondsInDay: number = 1000 * 60 * 60 * 24;
 
 export async function POST(req: NextRequest) {
 	let appId: number;
@@ -14,6 +18,25 @@ export async function POST(req: NextRequest) {
 		return new Response('Missing or invalid appId', { status: 400 });
 	}
 
+	// Check if already stored in database
+	const doc = await CachedProtonGame.findOne({appId: appId})
+	if(doc !== null) {
+		const creationDate: Date = doc.savedAt;
+		const currentDate: Date = new Date();
+
+		const diff: number = Math.abs(currentDate.getTime() - creationDate.getTime())
+		const differenceInDays: number = Math.floor(diff / millisecondsInDay);
+
+		if(differenceInDays < 30) {
+			// Fresh cache, send the document from DB
+			return Response.json(doc.data);
+		}
+
+		// Old cache, delete document and ask proton DB again
+		await CachedProtonGame.findOneAndDelete({appId: appId})
+		console.log("Asking protondb for, cache was too old:", appId);
+	}
+
 	try {
 		const protonDbResponse = await fetch(
 			`https://www.protondb.com/api/v1/reports/summaries/${appId}.json`
@@ -27,6 +50,18 @@ export async function POST(req: NextRequest) {
 
 		const data = await protonDbResponse.json();
 		data["id"] = appId;
+
+		// Save in mongodb
+		try {
+			const cachedProtonGame = new CachedProtonGame({
+				appId: appId,
+				savedAt: new Date(),
+				data: data
+			})
+			await cachedProtonGame.save();
+		} catch (err) {
+			logger.error("Could not save game document in DB.", err)
+		}
 		
 		return Response.json(data);
 	} catch (error) {
