@@ -35,6 +35,7 @@ export default function Start() {
 							Data usage
 						</Text>
 						<Box as={'ul'} listStyleType={'circle'} pl={5}>
+							<li>Basic functionality</li>
 							<li>System security</li>
 							<li>Rate limiting</li>
 							<li>Spam protection</li>
@@ -51,7 +52,7 @@ export default function Start() {
 						<br />
 						<Text>Logs are only kept for 3 months. If a session is deemed harmful, the IP Address will be reported to https://www.abuseipdb.com/ and banned from all services on this server.</Text>
 						<br />
-						<Text>* The Steam ID is saved for spam protection and rate limits, and <strong>CANNOT</strong> be linked your personal information, like your IP Address.</Text>
+						<Text>* The Steam ID is saved for spam protection and rate limits.</Text>
 					</Box>
 				</Card.Body>
 				<CardFooter />
