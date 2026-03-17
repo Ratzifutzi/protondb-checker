@@ -4,6 +4,7 @@
 import CardFooter from '@/components/partials/footer';
 import PersonaState from '@/components/partials/personaState';
 import SyncSteps from '@/components/partials/syncSteps';
+import { toaster } from '@/components/ui/toaster';
 import {
 	AbsoluteCenter,
 	Card,
@@ -90,6 +91,17 @@ export default function Fetch() {
 			});
 
 			if (!response.ok) {
+				if (response.status === 403) {
+					toaster.error({
+						title: "Session expired",
+						description: "Please fill out the form again.",
+						duration: 15_000,
+						closable: true,
+					})
+					router.push("/start")
+					return;
+				}
+
 				setErrors((prev) => [
 					...prev,
 					`Failed to fetch ProtonDB data for app ${game.game.id}`,

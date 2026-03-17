@@ -1,11 +1,14 @@
 import { logger } from '@/lib/logger';
 import CachedProtonGame from '@/models/CachedProtonGame';
+import ScanLog from '@/models/ScanLog';
+import { getClientIp } from 'next-request-ip';
 import { NextRequest } from 'next/server';
 
 const millisecondsInDay: number = 1000 * 60 * 60 * 24;
 
 export async function POST(req: NextRequest) {
 	let appId: number;
+	const sixtyMinutesAgo = new Date(Date.now() - 60 * 60 * 1000);
 
 	try {
 		const body = await req.json();
@@ -16,6 +19,16 @@ export async function POST(req: NextRequest) {
 
 	if (!Number.isInteger(appId) || appId <= 0) {
 		return new Response('Missing or invalid appId', { status: 400 });
+	}
+
+	// Check if the IP requested a profile recently, if not, reject response
+	const ipRateLimitDocument = await ScanLog.find({
+		ipAddress: getClientIp(req.headers),
+		date: {$gte: sixtyMinutesAgo}
+	})
+	if (ipRateLimitDocument.length == 0) {
+		console.log("IP didnt request a profile recently.");
+		return new Response(getClientIp(req.headers), { status: 403 });
 	}
 
 	// Check if already stored in database
