@@ -70,7 +70,7 @@ export const metadata: Metadata = {
 		canonical: 'https://proton.hyper-tech.ch',
 	},
 	icons: {
-		icon: '/banner-og.png',
+		icon: '/proton-logo.svg',
 	},
 };
 
