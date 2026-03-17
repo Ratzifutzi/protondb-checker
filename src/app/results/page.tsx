@@ -9,7 +9,7 @@ import { AbsoluteCenter, Box, Button, Card, Center, Field, For, HStack, Image, I
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ExternalLinkIcon } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import {
 	GameInfo,
 	GameInfoExtended,
@@ -44,7 +44,6 @@ const tierValues = {
 };
 
 const colorWithOpacity = (hex: string, opacity: number): string => {
-	// Convert opacity (0-1) to hex (00-FF)
 	const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0');
 	return `${hex}${alpha}`;
 };
@@ -60,12 +59,24 @@ export default function Start() {
 
 	const parentRef = useRef<HTMLDivElement>(null);
 
-	// Virtualizer setup
+	const protonDbMap = useMemo(() => {
+		const map = new Map<number, typeof protonDbInfo[0]>();
+		protonDbInfo.forEach((item) => map.set(item.id, item));
+		return map;
+	}, [protonDbInfo]);
+
+	const filteredGames = useMemo(() => {
+		if (!searchValue) return games;
+		return games.filter((game) =>
+			game.game.name.toLowerCase().includes(searchValue.toLowerCase())
+		);
+	}, [games, searchValue]);
+
 	const rowVirtualizer = useVirtualizer({
-		count: games.length,
+		count: filteredGames.length,
 		getScrollElement: () => parentRef.current,
-		estimateSize: () => 85, // Estimate height of each row (75px + margins)
-		overscan: 10, // Render a few extra rows above/below for smooth scrolling
+		estimateSize: () => 85,
+		overscan: 10,
 	});
 
 	const { share } = useParams();
@@ -74,12 +85,10 @@ export default function Start() {
 
 	useEffect(() => {
 		setLoading(true);
-		// Verify localstorage for profile and games
 		const games = localStorage.getItem('games');
 		const profile = localStorage.getItem('profile');
 		const protonDb = localStorage.getItem("protonData");
 
-		// Check URL for base64 permalink
 		if (typeof share === "string") {
 			const raw = atob(share)
 			try {
@@ -94,7 +103,6 @@ export default function Start() {
 		}
 
 		const parsedGames: GameTypeArray = JSON.parse(games!)
-		// Sort by playtime
 		parsedGames.sort((a, b) => {
 			return b.minutes - a.minutes;
 		})
@@ -105,6 +113,40 @@ export default function Start() {
 		setLoading(false);
 		setLastSortIndex(1)
 	}, [router, share]);
+
+	const handleSortByPlaytime = () => {
+		startTransition(() => {
+			const sortedGames = [...games].sort((a, b) => b.minutes - a.minutes);
+			setGames(sortedGames);
+			setLastSortIndex(1);
+		});
+	};
+
+	const handleSortByScore = () => {
+		startTransition(() => {
+			const sortedGames = [...games].sort((a, b) => {
+				const scoreA = protonDbMap.get(a.game.id)?.score ?? 0;
+				const scoreB = protonDbMap.get(b.game.id)?.score ?? 0;
+				return scoreB - scoreA;
+			});
+			setGames(sortedGames);
+			setLastSortIndex(2);
+		});
+	};
+
+	const handleSortByMedal = () => {
+		startTransition(() => {
+			const sortedGames = [...games].sort((a, b) => {
+				const tierA = protonDbMap.get(a.game.id)?.tier ?? "unknown";
+				const tierB = protonDbMap.get(b.game.id)?.tier ?? "unknown";
+				const validTierA = tierA as keyof typeof tierValues;
+				const validTierB = tierB as keyof typeof tierValues;
+				return tierValues[validTierB] - tierValues[validTierA];
+			});
+			setGames(sortedGames);
+			setLastSortIndex(3);
+		});
+	};
 
 	return (
 		<AbsoluteCenter>
@@ -126,54 +168,15 @@ export default function Start() {
 								}} />
 							</Field.Root>
 							<HStack justifyContent={"center"} display={"flex"} width={"full"}>
-								<Button variant={lastSortIndex === 1 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
-									startTransition(() => {
-										const sortedGames = [...games].sort((a, b) => b.minutes - a.minutes);
-										setGames(sortedGames);
-										setLastSortIndex(1);
-									});
-								}}>
+								<Button variant={lastSortIndex === 1 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={handleSortByPlaytime}>
 									Sort by Playtime
 								</Button>
 
-								<Button variant={lastSortIndex === 2 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
-									startTransition(() => {
-										const sortedGames = [...games].sort((a, b) => {
-											const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
-											const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
-
-											const scoreA = protonInfoA?.score ?? 0
-											const scoreB = protonInfoB?.score ?? 0
-
-											return scoreB - scoreA;
-										});
-
-										setGames(sortedGames);
-										setLastSortIndex(2);
-									});
-								}}>
+								<Button variant={lastSortIndex === 2 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={handleSortByScore}>
 									Sort by Score
 								</Button>
 
-								<Button variant={lastSortIndex === 3 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
-									startTransition(() => {
-										const sortedGames = [...games].sort((a, b) => {
-											const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
-											const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
-
-											const tierA = protonInfoA?.tier ?? "unknown";
-											const validTierA = tierA as keyof typeof tierValues;
-
-											const tierB = protonInfoB?.tier ?? "unknown";
-											const validTierB = tierB as keyof typeof tierValues;
-
-											return tierValues[validTierB] - tierValues[validTierA];
-										});
-
-										setGames(sortedGames);
-										setLastSortIndex(3)
-									});
-								}}>
+								<Button variant={lastSortIndex === 3 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={handleSortByMedal}>
 									Sort by Medal
 								</Button>
 							</HStack>
@@ -187,12 +190,8 @@ export default function Start() {
 								}}
 							>
 								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
-									const item = games[virtualRow.index];
-									const protonInfo = protonDbInfo.find((e) => e.id === item.game.id);
-
-									if (searchValue !== "") {
-										if (!item.game.name.toLowerCase().includes(searchValue.toLocaleLowerCase())) return;
-									}
+									const item = filteredGames[virtualRow.index];
+									const protonInfo = protonDbMap.get(item.game.id);
 
 									const rawScore = protonInfo?.score ?? 0;
 									const scoreValue = rawScore * 10;
