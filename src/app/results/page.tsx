@@ -150,7 +150,7 @@ export default function Start() {
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'600px'} minH={'750px'} maxH={"750px"} overflowY={loading ? "hidden" : "auto"} ref={parentRef}>
+			<Card.Root width={'90vw'} md={{ width: "600px" }} minH={'750px'} maxH={"750px"} overflowY={loading ? "hidden" : "auto"} ref={parentRef}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={3} />
@@ -231,8 +231,9 @@ export default function Start() {
 													alignItems={"flex-start"}
 													gap={1}
 													flex={1}
+													maxW={"calc(100% - 220px)"}
 												>
-													<Text fontWeight={"semibold"} maxW={"290px"} overflow={"hidden"} textOverflow={"ellipsis"} whiteSpace={"nowrap"}>
+													<Text fontWeight={"semibold"} maxW={"100%"} overflow={"hidden"} textOverflow={"ellipsis"} whiteSpace={"nowrap"}>
 														{item.game.name}
 													</Text>
 													<Text fontSize={"sm"} color={"fg.muted"}>

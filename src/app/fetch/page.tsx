@@ -123,7 +123,7 @@ export default function Fetch() {
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'600px'} minHeight={'350px'}>
+			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: "600px" }}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={1} />
@@ -134,7 +134,7 @@ export default function Fetch() {
 								Is this your profile?
 							</Card.Description>
 
-							<HStack>
+							<HStack maxWidth={"100%"}>
 								<Card.Root flexDirection={'row'} overflow={'hidden'} w={'sm'}>
 									<Skeleton loading={games === null} borderRadius={0}>
 										<Image
@@ -161,7 +161,7 @@ export default function Fetch() {
 											</Skeleton>
 										</Card.Title>
 										<Card.Description color={games?.length === 0 ? "fg.error" : ""}>
-											{games?.length || 0} games on account
+											{games?.length || 0} games
 											<br />
 										</Card.Description>
 									</Card.Body>
@@ -185,12 +185,12 @@ export default function Fetch() {
 					)}
 					{progress >= 0 && (
 						<Center>
-							<VStack>
+							<VStack maxWidth={"90%"}>
 								<Card.Description>
-									Please do not close this tab while your games are being
+									Please do not close this window while your games are being
 									checked.
 								</Card.Description>
-								<Progress.Root value={progress} w={'400px'} mt={12}>
+								<Progress.Root value={progress} w={'400px'} maxW={"100%"} mt={12}>
 									<Progress.Label mb="2">
 										Checking games ({gamesCompleted}/{totalGames})
 									</Progress.Label>

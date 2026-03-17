@@ -12,7 +12,7 @@ export default function Start() {
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'600px'} minHeight={'350px'}>
+			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: "600px" }}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={0} />

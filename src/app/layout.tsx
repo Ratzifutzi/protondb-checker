@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
+	themeColor: '#C70349',
 };
 
 
@@ -30,7 +31,6 @@ export const metadata: Metadata = {
 	authors: [{ name: 'Ratzifutzi' }],
 	creator: 'Ratzifutzi',
 	publisher: 'Ratzifutzi',
-	themeColor: '#C70349',
 	robots: {
 		index: true,
 		follow: true,
