@@ -1,6 +1,7 @@
 'use client';
 
 import PublicProfileNotice from '@/components/partials/publicProfileNotice';
+import { toaster } from '@/components/ui/toaster';
 import {
 	Button,
 	Card,
@@ -13,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import PrivateCaptcha from '@private-captcha/private-captcha-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 declare global {
 	interface Window {
@@ -52,6 +53,40 @@ export default function ManualInput({ setSyncMethod }: props) {
 		captchaSolution.current = detail.widget.solution();
 		console.log('Captcha solved!', captchaSolution.current);
 	};
+
+	// Check URL params
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search)
+
+		const errorParam = params.get("error")
+		const steamIdParam = params.get("steamid")
+
+		if (errorParam) {
+			toaster.error({
+				title: "Server Error",
+				description: "Steam experienced a server error and could not provide the logged in account. Please try again or use manual input.",
+				closable: true,
+				duration: 30_000,
+			})
+		}
+
+		if (steamIdParam) {
+			const decodedSteamId = decodeURIComponent(steamIdParam)
+
+			try {
+				if (steamIdInput.current) {
+					steamIdInput.current.value = decodedSteamId;
+				}
+			} catch {
+				toaster.error({
+					title: "Client Error",
+					description: "Client Error. Please try manual input.",
+					closable: true,
+					duration: 30_000,
+				})
+			}
+		}
+	}, [setSyncMethod, steamIdInput])
 
 	function handleSubmit() {
 		if (!captchaPassed) return;

@@ -3,12 +3,43 @@
 import CardFooter from '@/components/partials/footer';
 import SyncSteps from '@/components/partials/syncSteps';
 import { AbsoluteCenter, Button, Card, Center, HStack } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ManualInput from './components/ManualInput';
 import LinkAccount from './components/LinkAccount';
+import { toaster } from '@/components/ui/toaster';
 
 export default function Start() {
 	const [syncMethod, setSyncMethod] = useState(0);
+
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search)
+
+		const errorParam = params.get("error")
+		const steamIdParam = params.get("steamid")
+
+		if (errorParam) {
+			toaster.error({
+				title: "Server Error",
+				description: "Steam experienced a server error and could not provide the logged in account. Please try again or use manual input.",
+				closable: true,
+				duration: 30_000,
+			})
+		}
+
+		if (steamIdParam) {
+			try {
+				// eslint-disable-next-line react-hooks/set-state-in-effect
+				setSyncMethod(1)
+			} catch {
+				toaster.error({
+					title: "Client Error",
+					description: "Client Error. Please try manual input.",
+					closable: true,
+					duration: 30_000,
+				})
+			}
+		}
+	}, [])
 
 	return (
 		<AbsoluteCenter>

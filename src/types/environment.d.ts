@@ -11,6 +11,7 @@ declare global {
 
 			// Etc
 			HOSTED_DOMAIN: string;
+			STEAM_API_KEY: string;
 		}
 	}
 }
