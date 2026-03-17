@@ -136,7 +136,13 @@ export default function ManualInput({ setSyncMethod }: props) {
 						<HStack w={"full"}>
 							<Input
 								type="text"
-								autoComplete='off'
+								name="steam-identifier"
+								id="steam-identifier"
+								autoComplete="one-time-code"
+								data-1p-ignore
+								data-lpignore="true"
+								data-bwignore
+								data-form-type="other"
 								placeholder="Enter your SteamID, Vanity URL or Vanity Username"
 								ref={steamIdInput}
 							/>
