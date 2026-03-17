@@ -43,14 +43,14 @@ export const metadata: Metadata = {
 		},
 	},
 	openGraph: {
-		title: 'ProtonDB Check: Check your Steam Library against ProtonDB',
+		title: 'ProtonDB Check: Check if your games run on Linux',
 		description:
 			'A lightweight, open-source scanner. Paste your Steam ID or library and get instant compatibility ratings from ProtonDB. Built for the Linux community.',
 		url: 'https://proton.hyper-tech.ch',
 		siteName: 'ProtonDB Check',
 		images: [
 			{
-				url: '/proton-logo.svg',
+				url: '/banner-og.png',
 				width: 1200,
 				height: 630,
 				alt: 'ProtonDB Check Logo',
@@ -64,13 +64,13 @@ export const metadata: Metadata = {
 		title: 'ProtonDB Check by Ratzifutzi',
 		description:
 			'Open-source Steam library scanner for Linux. Check ProtonDB compatibility instantly. No accounts required.',
-		images: ['/proton-logo.svg'],
+		images: ['/banner-og.png'],
 	},
 	alternates: {
 		canonical: 'https://proton.hyper-tech.ch',
 	},
 	icons: {
-		icon: '/proton-logo.svg',
+		icon: '/banner-og.png',
 	},
 };
 
