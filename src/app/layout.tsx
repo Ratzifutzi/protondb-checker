@@ -1,6 +1,7 @@
 import { Provider } from '@/components/ui/provider';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
 	title: 'Proton Checker',
@@ -26,7 +27,9 @@ export default function RootLayout({
 				></script>
 			</head>
 			<body>
-				<Provider>{children}</Provider>
+				<Provider>
+					<Toaster />
+					{children}</Provider>
 			</body>
 		</html>
 	);

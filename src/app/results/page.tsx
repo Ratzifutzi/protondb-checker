@@ -5,9 +5,11 @@ import CardFooter from '@/components/partials/footer';
 import SyncSteps from '@/components/partials/syncSteps';
 import MoreGameInfo from '@/types/MoreGameInfo';
 import { ProtonDbArray } from '@/types/ProtonDbArray';
-import { AbsoluteCenter, Box, Button, Card, Center, For, HStack, Image, Skeleton, SkeletonText, Spinner, Text, VStack } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { AbsoluteCenter, Box, Button, Card, Center, Field, For, HStack, Image, Input, Skeleton, SkeletonText, Spinner, Text, VStack } from '@chakra-ui/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { ExternalLinkIcon } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import {
 	GameInfo,
 	GameInfoExtended,
@@ -16,7 +18,11 @@ import {
 } from 'steamapi';
 
 type GameTypeArray = UserPlaytime<GameInfo | GameInfoExtended | MoreGameInfo>[];
-
+type DataExport = {
+	"games": GameTypeArray,
+	"protonDbInfo": ProtonDbArray,
+	"profile": UserSummary
+}
 
 const scoreColors = {
 	"pending": "#000000",
@@ -48,6 +54,21 @@ export default function Start() {
 	const [protonDbInfo, setProtonDbInfo] = useState<ProtonDbArray>([]);
 	const [profile, setProfile] = useState<UserSummary | null>(null);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [isPending, startTransition] = useTransition();
+	const [lastSortIndex, setLastSortIndex] = useState<number>(0);
+	const [searchValue, setSearchValue] = useState<string>("");
+
+	const parentRef = useRef<HTMLDivElement>(null);
+
+	// Virtualizer setup
+	const rowVirtualizer = useVirtualizer({
+		count: games.length,
+		getScrollElement: () => parentRef.current,
+		estimateSize: () => 85, // Estimate height of each row (75px + margins)
+		overscan: 10, // Render a few extra rows above/below for smooth scrolling
+	});
+
+	const { share } = useParams();
 
 	const router = useRouter()
 
@@ -57,6 +78,16 @@ export default function Start() {
 		const games = localStorage.getItem('games');
 		const profile = localStorage.getItem('profile');
 		const protonDb = localStorage.getItem("protonData");
+
+		// Check URL for base64 permalink
+		if (typeof share === "string") {
+			const raw = atob(share)
+			try {
+
+			} catch {
+				console.log("Could not decode string.");
+			}
+		}
 
 		if (!games || !profile || !protonDb) {
 			router.push('/');
@@ -72,11 +103,12 @@ export default function Start() {
 		setProfile(JSON.parse(profile!));
 		setProtonDbInfo(JSON.parse(protonDb!))
 		setLoading(false);
-	}, [router]);
+		setLastSortIndex(1)
+	}, [router, share]);
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'600px'} minH={'750px'} maxH={"750px"} overflowY={loading ? "hidden" : "scroll"}>
+			<Card.Root width={'600px'} minH={'750px'} maxH={"750px"} overflowY={loading ? "hidden" : "auto"} ref={parentRef}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={3} />
@@ -87,62 +119,80 @@ export default function Start() {
 						</Card.Description>
 					</SkeletonText>
 					<Box gap={2} display={"flex"} flexDirection={"column"}>
-						<HStack justifyContent={"center"} display={"flex"}>
-							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
-								setLoading(true);
-								const sortedGames = [...games].sort((a, b) => {
-									return b.minutes - a.minutes;
-								});
+						<VStack flex={1}>
+							<Field.Root>
+								<Input placeholder='Search for a game' value={searchValue} onChange={(e) => {
+									setSearchValue(e.target.value)
+								}} />
+							</Field.Root>
+							<HStack justifyContent={"center"} display={"flex"} width={"full"}>
+								<Button variant={lastSortIndex === 1 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
+									startTransition(() => {
+										const sortedGames = [...games].sort((a, b) => b.minutes - a.minutes);
+										setGames(sortedGames);
+										setLastSortIndex(1);
+									});
+								}}>
+									Sort by Playtime
+								</Button>
 
-								setGames(sortedGames);
-								setLoading(false);
-							}}>
-								Sort by Playtime
-							</Button>
+								<Button variant={lastSortIndex === 2 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
+									startTransition(() => {
+										const sortedGames = [...games].sort((a, b) => {
+											const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
+											const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
 
-							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
-								setLoading(true);
-								const sortedGames = [...games].sort((a, b) => {
-									const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
-									const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
+											const scoreA = protonInfoA?.score ?? 0
+											const scoreB = protonInfoB?.score ?? 0
 
-									const scoreA = protonInfoA?.score ?? 0
-									const scoreB = protonInfoB?.score ?? 0
+											return scoreB - scoreA;
+										});
 
-									return scoreB - scoreA;
-								});
+										setGames(sortedGames);
+										setLastSortIndex(2);
+									});
+								}}>
+									Sort by Score
+								</Button>
 
-								setGames(sortedGames);
-								setLoading(false);
-							}}>
-								Sort by Userscore
-							</Button>
+								<Button variant={lastSortIndex === 3 ? "solid" : "surface"} disabled={loading} loading={isPending} flex={1} padding={0} onClick={() => {
+									startTransition(() => {
+										const sortedGames = [...games].sort((a, b) => {
+											const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
+											const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
 
-							<Button variant={"surface"} disabled={loading} flexGrow={1} onClick={() => {
-								setLoading(true);
-								const sortedGames = [...games].sort((a, b) => {
-									const protonInfoA = protonDbInfo.find((e) => e.id === a.game.id);
-									const protonInfoB = protonDbInfo.find((e) => e.id === b.game.id);
+											const tierA = protonInfoA?.tier ?? "unknown";
+											const validTierA = tierA as keyof typeof tierValues;
 
-									const tierA = protonInfoA?.tier ?? "unknown";
-									const validTierA = tierA as keyof typeof tierValues;
+											const tierB = protonInfoB?.tier ?? "unknown";
+											const validTierB = tierB as keyof typeof tierValues;
 
-									const tierB = protonInfoB?.tier ?? "unknown";
-									const validTierB = tierB as keyof typeof tierValues;
+											return tierValues[validTierB] - tierValues[validTierA];
+										});
 
-									return tierValues[validTierB] - tierValues[validTierA];
-								});
-
-								setGames(sortedGames);
-								setLoading(false);
-							}}>
-								Sort by Medal
-							</Button>
-						</HStack>
-						{loading === false ? (
-							<For each={games}>
-								{(item, index) => {
+										setGames(sortedGames);
+										setLastSortIndex(3)
+									});
+								}}>
+									Sort by Medal
+								</Button>
+							</HStack>
+						</VStack>
+						{!loading && !isPending ? (
+							<div
+								style={{
+									height: `${rowVirtualizer.getTotalSize()}px`,
+									width: '100%',
+									position: 'relative',
+								}}
+							>
+								{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+									const item = games[virtualRow.index];
 									const protonInfo = protonDbInfo.find((e) => e.id === item.game.id);
+
+									if (searchValue !== "") {
+										if (!item.game.name.toLowerCase().includes(searchValue.toLocaleLowerCase())) return;
+									}
 
 									const rawScore = protonInfo?.score ?? 0;
 									const scoreValue = rawScore * 10;
@@ -153,7 +203,14 @@ export default function Start() {
 
 									return (
 										<Box
-											key={index}
+											key={item.game.id}
+											style={{
+												position: 'absolute',
+												top: 0,
+												left: 0,
+												width: '100%',
+												transform: `translateY(${virtualRow.start}px)`,
+											}}
 											bgGradient={`to-l`}
 											gradientFrom={subtleColor}
 											gradientTo="transparent"
@@ -195,8 +252,8 @@ export default function Start() {
 											</HStack>
 										</Box>
 									);
-								}}
-							</For>
+								})}
+							</div>
 						) : (
 							<>
 								<Skeleton height={"75px"} w={"full"} />
