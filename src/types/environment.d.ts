@@ -6,8 +6,11 @@ declare global {
 			MONGODB_NAME: string;
 
 			// Captcha
-			NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY: string,
-			PRIVATE_CAPTCHA_KEY: string,
+			NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY: string;
+			PRIVATE_CAPTCHA_KEY: string;
+
+			// Etc
+			HOSTED_DOMAIN: string;
 		}
 	}
 }

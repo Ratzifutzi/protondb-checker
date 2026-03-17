@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 		'protondb scanner',
 		'steam library linux',
 		'oss gaming tools',
+		"protondb library"
 	],
 	authors: [{ name: 'Ratzifutzi' }],
 	creator: 'Ratzifutzi',
@@ -46,11 +47,11 @@ export const metadata: Metadata = {
 		title: 'ProtonDB Check: Check if your games run on Linux',
 		description:
 			'A lightweight, open-source scanner. Paste your Steam ID or library and get instant compatibility ratings from ProtonDB. Built for the Linux community.',
-		url: 'https://proton.hyper-tech.ch',
+		url: process.env.HOSTED_DOMAIN,
 		siteName: 'ProtonDB Check',
 		images: [
 			{
-				url: '/banner-og.png',
+				url: `${process.env.HOSTED_DOMAIN}/banner-og.png`,
 				width: 1200,
 				height: 630,
 				alt: 'ProtonDB Check Logo',
@@ -64,13 +65,13 @@ export const metadata: Metadata = {
 		title: 'ProtonDB Check by Ratzifutzi',
 		description:
 			'Open-source Steam library scanner for Linux. Check ProtonDB compatibility instantly. No accounts required.',
-		images: ['/banner-og.png'],
+		images: [`${process.env.HOSTED_DOMAIN}/banner-og.png`],
 	},
 	alternates: {
-		canonical: 'https://proton.hyper-tech.ch',
+		canonical: process.env.HOSTED_DOMAIN,
 	},
 	icons: {
-		icon: '/proton-logo.svg',
+		icon: `${process.env.HOSTED_DOMAIN}/proton-logo.svg`,
 	},
 };
 

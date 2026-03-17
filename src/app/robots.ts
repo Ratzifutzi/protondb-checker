@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
 				disallow: ['/fetch', '/results', '/start'],
 			},
 		],
-		sitemap: 'https://proton.hyper-tech.ch/sitemap.xml',
+		sitemap: `${process.env.HOSTED_DOMAIN}/sitemap.xml`,
 	};
 }

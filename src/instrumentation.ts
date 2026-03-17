@@ -9,7 +9,14 @@ export async function register() {
 
 		//////////////////////////////////////////////////////
 		// Verify environment variables
-		const requiredEnvVars = ['MONGODB_URI', 'MONGODB_NAME', "STEAM_API_KEY", "PRIVATE_CAPTCHA_KEY", "NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY"];
+		const requiredEnvVars = [
+			'MONGODB_URI',
+			'MONGODB_NAME',
+			'STEAM_API_KEY',
+			'PRIVATE_CAPTCHA_KEY',
+			'NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY',
+			'HOSTED_DOMAIN',
+		];
 		for (const envVar of requiredEnvVars) {
 			if (!process.env[envVar]) {
 				errors.push(`Environment variable ${envVar} is not set`);
@@ -43,7 +50,7 @@ export async function register() {
 				`Preparation completed with ${errors.length} error(s). Please fix the following issues before trying again:`,
 			);
 			errors.forEach((error) => logger.error(error));
-			logger.error("Exiting now.")
+			logger.error('Exiting now.');
 			process.exit(1);
 		}
 
