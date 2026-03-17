@@ -157,7 +157,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 						</Link>
 					</Field.Root>
 				</HStack>
-				<Center>
+				<Center mt={10}>
 					<PrivateCaptcha
 						key={captchaKey}
 						siteKey={process.env.NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY}
