@@ -25,7 +25,7 @@ export default function Start() {
 								account directly.
 							</Card.Description>
 							<Center>
-								<HStack width={'60%'} gap={5}>
+								<HStack width={{ base: "90%", md: "60%" }} gap={5}>
 									<Button
 										onClick={() => {
 											setSyncMethod(1);
