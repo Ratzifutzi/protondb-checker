@@ -15,7 +15,7 @@ export default function CardFooter() {
 	return (
 		<Card.Footer justifyContent={'center'}>
 			<VStack gap={0}>
-				<Text color={"fg.subtle"} fontSize={"x-small"} fontWeight={"lighter"}>This site is not affiliated with ProtonDB.</Text>
+				<Text color={"fg.subtle"} textAlign={"center"} fontSize={"x-small"} fontWeight={"normal"}>This site has no affiliation with Valve Software nor ProtonDB. All game images and logos are property of their respective owners.</Text>
 				<HStack>
 					<Link
 						color={'blue.400'}
@@ -30,7 +30,7 @@ export default function CardFooter() {
 						color={'blue.400'}
 						fontSize={'sm'}
 						target="_blank"
-						href="https://www.protondb.com/"
+						href="https://donate.stripe.com/28EcN6flF9WP9uOdTz0VO0d"
 					>
 						Donate
 					</Link>
