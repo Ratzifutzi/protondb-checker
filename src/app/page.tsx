@@ -15,6 +15,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ProfilesCheckedTicker from '../components/ProfilesCheckedTicker';
 
 export default function Home() {
 	const [loading, setLoading] = useState<boolean>(true);
@@ -51,10 +52,11 @@ export default function Home() {
 							</Card.Title>
 							<Separator flex={'1'} />
 						</HStack>
-						<Card.Description>
+						<Card.Description mb={3}>
 							This simple tool allows you to check all games in your steam
 							library to see their ProtonDB Status, useful for Linux Gaming.
 						</Card.Description>
+						<ProfilesCheckedTicker />
 					</Box>
 					<Button
 						loading={loading}
