@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import CardFooter from '@/components/partials/footer';
@@ -10,6 +11,7 @@ import { toaster } from '@/components/ui/toaster';
 
 export default function Start() {
 	const [syncMethod, setSyncMethod] = useState(0);
+	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search)
@@ -28,7 +30,6 @@ export default function Start() {
 
 		if (steamIdParam) {
 			try {
-				// eslint-disable-next-line react-hooks/set-state-in-effect
 				setSyncMethod(1)
 			} catch {
 				toaster.error({
@@ -39,7 +40,9 @@ export default function Start() {
 				})
 			}
 		}
-	}, [])
+
+		setLoading(false);
+	}, [setLoading])
 
 	return (
 		<AbsoluteCenter>
@@ -58,6 +61,7 @@ export default function Start() {
 							<Center>
 								<HStack width={{ base: "90%", md: "60%" }} gap={5}>
 									<Button
+										loading={loading}
 										onClick={() => {
 											setSyncMethod(1);
 										}}
@@ -66,6 +70,7 @@ export default function Start() {
 										Use SteamID
 									</Button>
 									<Button
+										loading={loading}
 										onClick={() => {
 											setSyncMethod(2);
 										}}

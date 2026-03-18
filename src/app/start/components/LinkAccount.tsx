@@ -1,5 +1,8 @@
+"use client";
+
 import { Box, Button, Card, HStack, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 type props = {
 	setSyncMethod: (id: number) => void;
@@ -7,6 +10,7 @@ type props = {
 
 export default function LinkAccount({ setSyncMethod }: props) {
 	const router = useRouter();
+	const [loading, setLoading] = useState<boolean>(false);
 
 	return (
 		<>
@@ -30,15 +34,22 @@ export default function LinkAccount({ setSyncMethod }: props) {
 					Your Steam login credentials will not be shared.
 				</li>
 				<li>
+					This method can be used to find your profile ID automatically if you dont know it.
+				</li>
+				<li>
 					A unique numeric identifier will be shared with this page. Through this, this page will be able to identify your Steam community profile and access information about your Steam account according to your Profile Privacy Settings.
 				</li>
 				<li>
 					Any information on your Steam Profile page that is set to be publicly viewable may be accessed by this page.
 				</li>
+				<li>
+					<strong>When you are redirected back to this page after logging in, you will only have to pass the CAPTCHA and click check.</strong>
+				</li>
 			</Box>
 
-			<Button w={"100%"} onClick={() => {
-				router.push("/api/auth/steam/login/")
+			<Button w={"100%"} loading={loading} onClick={() => {
+				setLoading(true);
+				router.push("/api/auth/steam/login/");
 			}}>Sign in with Steam</Button>
 		</>
 	);

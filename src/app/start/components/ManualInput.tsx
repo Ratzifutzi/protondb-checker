@@ -36,6 +36,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 
 	const [errorText, setErrorText] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
+	const [changingPage, setChangingPage] = useState<boolean>(false);
 
 	const router = useRouter();
 
@@ -134,6 +135,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 				console.log('Loaded games successfully');
 				localStorage.setItem('games', JSON.stringify(data.games));
 				localStorage.setItem('profile', JSON.stringify(data.profile));
+				setChangingPage(true);
 				router.push('/fetch');
 			})
 			.catch((error) => {
@@ -185,7 +187,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 								type="button"
 								disabled={!captchaPassed}
 								onClick={handleSubmit}
-								loading={loading}
+								loading={loading || changingPage}
 							>
 								Check ID
 							</Button>
