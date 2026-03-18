@@ -8,7 +8,7 @@ export type StatsCache = {
 	total: number;
 };
 
-const CACHE_DURATION_MS = 60 * 60 * 1000; // 60 minutes
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 const CachedResults: StatsCache = {
 	age: new Date(0),
 	lastMonth: -1,
