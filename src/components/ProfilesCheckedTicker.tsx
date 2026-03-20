@@ -63,7 +63,7 @@ function useCountUp(target: number, duration: number) {
 
 function Ticker({ number, description, loading }: { number: number, description: string, loading: boolean }) {
 	const animatedNumber = useCountUp(number, 400);
-	const paddedNumber = String(animatedNumber).padStart(5, "0");
+	const paddedNumber = String(animatedNumber).padStart(4, "0");
 
 	return (
 		<>
