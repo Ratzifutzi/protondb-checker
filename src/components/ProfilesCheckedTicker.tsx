@@ -63,7 +63,7 @@ function useCountUp(target: number, duration: number) {
 
 function Ticker({ number, description, loading }: { number: number, description: string, loading: boolean }) {
 	const animatedNumber = useCountUp(number, 400);
-	const paddedNumber = String(animatedNumber).padStart(4, "0");
+	const paddedNumber = String(animatedNumber).padStart(5, "0");
 
 	return (
 		<>
@@ -152,10 +152,10 @@ export default function ProfilesCheckedTicker() {
 
 	return (
 		<Box>
-			<Text textAlign={"center"} fontWeight={"bold"} mb={2}>Profiles checked</Text>
+			<Text textAlign={"center"} fontWeight={"bold"} mb={2}></Text>
 			<Box w={"100%"} height={"60px"} display={"flex"} justifyContent={"space-evenly"}>
-				<Ticker number={data?.lastMonth || 0} description="Last 30 days" loading={loading} />
-				<Ticker number={data?.total || 0} description="Total Checks" loading={loading} />
+				<Ticker number={data?.totalGames || 0} description="Games Checked" loading={loading} />
+				<Ticker number={data?.total || 0} description="Profiles Checked" loading={loading} />
 			</Box>
 		</Box>
 	)

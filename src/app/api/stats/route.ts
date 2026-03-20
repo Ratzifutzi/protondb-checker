@@ -1,11 +1,13 @@
 import { logger } from '@/lib/logger';
+import CachedProtonGame from '@/models/CachedProtonGame';
 import ScanLog from '@/models/ScanLog';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export type StatsCache = {
 	age: Date;
 	lastMonth: number;
 	total: number;
+	totalGames: number;
 };
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
@@ -13,9 +15,10 @@ const CachedResults: StatsCache = {
 	age: new Date(0),
 	lastMonth: -1,
 	total: -1,
+	totalGames: -1,
 };
 
-export async function GET(req: NextRequest) {
+export async function GET() {
 	const now = Date.now();
 	const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
 	const foreverAgo = new Date(0);
@@ -37,9 +40,12 @@ export async function GET(req: NextRequest) {
 		});
 		lastMonth = lastMonthDocuments.length;
 
+		const totalGamesCount = await CachedProtonGame.countDocuments();
+
 		CachedResults.age = new Date(Date.now());
 		CachedResults.total = total;
 		CachedResults.lastMonth = lastMonth;
+		CachedResults.totalGames = totalGamesCount;
 	}
 
 	return NextResponse.json(CachedResults);
