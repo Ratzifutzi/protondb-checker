@@ -26,7 +26,7 @@ export async function register() {
 		//////////////////////////////////////////////////////
 		// Security audit
 		try {
-			execSync('npm audit', { stdio: 'ignore' });
+			execSync('npm audit --audit-level=high', { stdio: 'ignore' });
 		} catch {
 			errors.push(
 				'npm audit returned with errors. Please fix the vulnerabilities before running the app.',
