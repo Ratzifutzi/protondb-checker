@@ -7,6 +7,8 @@ import SyncSteps from '@/components/partials/syncSteps';
 import { toaster } from '@/components/ui/toaster';
 import {
 	AbsoluteCenter,
+	Alert,
+	Box,
 	Card,
 	Center,
 	HStack,
@@ -14,6 +16,7 @@ import {
 	Image,
 	Progress,
 	Skeleton,
+	Text,
 	VStack,
 } from '@chakra-ui/react';
 import { CheckIcon, XIcon } from 'lucide-react';
@@ -35,11 +38,11 @@ export default function Fetch() {
 	const [profile, setProfile] = useState<UserSummary | null>(null);
 
 	const [progress, setProgress] = useState<number>(-1);
-	const [gamesCompleted, setGamesCompleted] = useState<number>(0)
+	const [gamesCompleted, setGamesCompleted] = useState<number>(0);
 	const [totalGames, setTotalGames] = useState<number>(0);
 	const [, setErrors] = useState<string[]>([]);
 
-	const router = useRouter()
+	const router = useRouter();
 
 	useEffect(() => {
 		// Verify localstorage for profile and games
@@ -59,12 +62,12 @@ export default function Fetch() {
 	useEffect(() => {
 		if (progress > 0 && progress < 100) {
 			window.onbeforeunload = () => {
-				return "Closing this page will reset your progress."
-			}
+				return 'Closing this page will reset your progress.';
+			};
 		} else {
-			window.onbeforeunload = null
+			window.onbeforeunload = null;
 		}
-	}, [progress])
+	}, [progress]);
 
 	async function startFetch() {
 		const gamesToProcess = games || [];
@@ -93,12 +96,12 @@ export default function Fetch() {
 			if (!response.ok) {
 				if (response.status === 403) {
 					toaster.error({
-						title: "Session expired",
-						description: "Please fill out the form again.",
+						title: 'Session expired',
+						description: 'Please fill out the form again.',
 						duration: 15_000,
 						closable: true,
-					})
-					router.push("/start")
+					});
+					router.push('/start');
 					return;
 				}
 
@@ -123,7 +126,7 @@ export default function Fetch() {
 
 	return (
 		<AbsoluteCenter>
-			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: "600px" }}>
+			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: '600px' }}>
 				<Card.Body>
 					<Card.Header mb={4}>
 						<SyncSteps currentStep={1} />
@@ -134,7 +137,44 @@ export default function Fetch() {
 								Is this your profile?
 							</Card.Description>
 
-							<HStack maxWidth={"100%"}>
+							{games?.length == 0 && (
+								<Alert.Root mb={3} status={'error'}>
+									<Alert.Indicator />
+									<Alert.Content>
+										<Alert.Title fontWeight={'black'}>
+											Games are hidden by default on Steam.
+										</Alert.Title>
+										<Alert.Description>
+											You can change your Steam profile{' '}
+											<Text asChild textDecor={'underline'} fontWeight={'bold'}>
+												<Link
+													href={'https://steamcommunity.com/my/edit/settings'}
+												>
+													privacy settings
+												</Link>
+											</Text>
+											:
+											<Box as="ul" listStyleType="circle" mb={1} mt={1}>
+												<li>
+													From your Steam Profile, click the Edit Profile link
+													under your displayed badge
+												</li>
+												<li>Click the My Privacy Settings tab</li>
+												<li>Set Game details to Public</li>
+												<li>
+													Uncheck Always keep my total playtime private option
+												</li>
+											</Box>
+											<Text fontWeight={'black'}>
+												AFTER CHANGING THE SETTINGS: <br /> Click Start Over in
+												the top left, and fill out the form again. This page
+												will not update, until you do that.x
+											</Text>
+										</Alert.Description>
+									</Alert.Content>
+								</Alert.Root>
+							)}
+							<HStack maxWidth={'100%'}>
 								<Card.Root flexDirection={'row'} overflow={'hidden'} w={'sm'}>
 									<Skeleton loading={games === null} borderRadius={0}>
 										<Image
@@ -160,7 +200,9 @@ export default function Fetch() {
 												)}
 											</Skeleton>
 										</Card.Title>
-										<Card.Description color={games?.length === 0 ? "fg.error" : ""}>
+										<Card.Description
+											color={games?.length === 0 ? 'fg.error' : ''}
+										>
 											{games?.length || 0} games
 											<br />
 										</Card.Description>
@@ -168,7 +210,11 @@ export default function Fetch() {
 								</Card.Root>
 
 								<VStack display={'flex'}>
-									<IconButton variant={'surface'} onClick={startFetch} disabled={!games || games?.length == 0}>
+									<IconButton
+										variant={'surface'}
+										onClick={startFetch}
+										disabled={!games || games?.length == 0}
+									>
 										<CheckIcon />
 									</IconButton>
 									<IconButton
@@ -185,12 +231,17 @@ export default function Fetch() {
 					)}
 					{progress >= 0 && (
 						<Center>
-							<VStack maxWidth={"90%"}>
+							<VStack maxWidth={'90%'}>
 								<Card.Description>
 									Please do not close this window while your games are being
 									checked.
 								</Card.Description>
-								<Progress.Root value={progress} w={'400px'} maxW={"100%"} mt={12}>
+								<Progress.Root
+									value={progress}
+									w={'400px'}
+									maxW={'100%'}
+									mt={12}
+								>
 									<Progress.Label mb="2">
 										Checking games ({gamesCompleted}/{totalGames})
 									</Progress.Label>
