@@ -34,7 +34,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 	const captchaSolution = useRef<string | null>(null);
 	const steamIdInput = useRef<HTMLInputElement>(null);
 
-	const [errorText, setErrorText] = useState<string>("");
+	const [errorText, setErrorText] = useState<string>('');
 	const [loading, setLoading] = useState<boolean>(false);
 	const [changingPage, setChangingPage] = useState<boolean>(false);
 
@@ -57,22 +57,23 @@ export default function ManualInput({ setSyncMethod }: props) {
 
 	// Check URL params
 	useEffect(() => {
-		const params = new URLSearchParams(window.location.search)
+		const params = new URLSearchParams(window.location.search);
 
-		const errorParam = params.get("error")
-		const steamIdParam = params.get("steamid")
+		const errorParam = params.get('error');
+		const steamIdParam = params.get('steamid');
 
 		if (errorParam) {
 			toaster.error({
-				title: "Server Error",
-				description: "Steam experienced a server error and could not provide the logged in account. Please try again or use manual input.",
+				title: 'Server Error',
+				description:
+					'Steam experienced a server error and could not provide the logged in account. Please try again or use manual input.',
 				closable: true,
 				duration: 30_000,
-			})
+			});
 		}
 
 		if (steamIdParam) {
-			const decodedSteamId = decodeURIComponent(steamIdParam)
+			const decodedSteamId = decodeURIComponent(steamIdParam);
 
 			try {
 				if (steamIdInput.current) {
@@ -80,19 +81,19 @@ export default function ManualInput({ setSyncMethod }: props) {
 				}
 			} catch {
 				toaster.error({
-					title: "Client Error",
-					description: "Client Error. Please try manual input.",
+					title: 'Client Error',
+					description: 'Client Error. Please try manual input.',
 					closable: true,
 					duration: 30_000,
-				})
+				});
 			}
 		}
-	}, [setSyncMethod, steamIdInput])
+	}, [setSyncMethod, steamIdInput]);
 
 	function handleSubmit() {
 		if (!captchaPassed) return;
 		setLoading(true);
-		setErrorText("")
+		setErrorText('');
 
 		// POST
 		fetch('/api/check', {
@@ -109,21 +110,25 @@ export default function ManualInput({ setSyncMethod }: props) {
 				if (!response.ok) {
 					switch (response.status) {
 						case 400:
-							setErrorText("Invalid input.")
+							setErrorText('Invalid input.');
 							break;
 						case 404:
-							setErrorText("User not found.")
+							setErrorText('User not found.');
 							break;
 						case 429:
 							const text = await response.text();
-							if (text == "Profile") {
-								setErrorText("This profile has been requested too many times. Try a different one.")
+							if (text == 'Profile') {
+								setErrorText(
+									'This profile has been requested too many times. Try a different one.',
+								);
 							} else {
-								setErrorText("You have requested too many users. Try again in a few hours.")
+								setErrorText(
+									'You have requested too many users. Try again in a few hours.',
+								);
 							}
 							break;
 						default:
-							setErrorText("Unexpected server error.")
+							setErrorText('Unexpected server error.');
 							break;
 					}
 
@@ -159,18 +164,19 @@ export default function ManualInput({ setSyncMethod }: props) {
 					cursor={'pointer'}
 					fontSize={'sm'}
 					color={'blue.400'}
-					display={loading ? "none" : "block"}
+					display={loading ? 'none' : 'block'}
 				>
 					Link account instead
 				</Text>
 			</HStack>
 			<form>
 				<HStack>
-					<Field.Root required disabled={loading} invalid={errorText !== ""}>
+					<Field.Root required disabled={loading} invalid={errorText !== ''}>
 						<Field.Label>
-							SteamID, Vanity URL or vanity username<Field.RequiredIndicator />
+							SteamID, Vanity URL or vanity username
+							<Field.RequiredIndicator />
 						</Field.Label>
-						<HStack w={"full"}>
+						<HStack w={'full'}>
 							<Input
 								type="text"
 								name="steam-identifier"
@@ -193,7 +199,10 @@ export default function ManualInput({ setSyncMethod }: props) {
 							</Button>
 						</HStack>
 						<Field.ErrorText>{errorText}</Field.ErrorText>
-						<Link href='https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC' target='_blank'>
+						<Link
+							href="https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC"
+							target="_blank"
+						>
 							<Field.HelperText color={'blue.400'} cursor={'button'}>
 								How do I find my ID?
 							</Field.HelperText>
@@ -204,6 +213,7 @@ export default function ManualInput({ setSyncMethod }: props) {
 					<PrivateCaptcha
 						key={captchaKey}
 						siteKey={process.env.NEXT_PUBLIC_PRIVATE_CAPTCHA_SITEKEY}
+						puzzleEndpoint="https://captcha.hyper-tech.ch/puzzle"
 						theme="dark"
 						onFinish={handleCaptchaFinished}
 					/>

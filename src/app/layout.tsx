@@ -1,14 +1,13 @@
 import { Provider } from '@/components/ui/provider';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from '@/components/ui/toaster';
 
 export const viewport: Viewport = {
 	width: 'device-width',
 	initialScale: 1,
 	themeColor: '#C70349',
 };
-
 
 export const metadata: Metadata = {
 	title: {
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
 		'protondb scanner',
 		'steam library linux',
 		'oss gaming tools',
-		"protondb library"
+		'protondb library',
 	],
 	authors: [{ name: 'Ratzifutzi' }],
 	creator: 'Ratzifutzi',
@@ -85,13 +84,14 @@ export default function RootLayout({
 			<head>
 				<script
 					defer
-					src="https://cdn.privatecaptcha.com/widget/js/privatecaptcha.js"
+					src="https://captcha.hyper-tech.ch/widget/js/privatecaptcha.js"
 				></script>
 			</head>
 			<body>
 				<Provider>
 					<Toaster />
-					{children}</Provider>
+					{children}
+				</Provider>
 			</body>
 		</html>
 	);

@@ -7,6 +7,7 @@ class CaptchaSingleton {
 	private constructor() {
 		this.client = createClient({
 			apiKey: process.env.PRIVATE_CAPTCHA_KEY as string,
+			domain: 'captcha.hyper-tech.ch',
 			//logger: console.log,
 		});
 	}
