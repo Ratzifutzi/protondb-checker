@@ -14,10 +14,7 @@ class CaptchaSingleton {
 
 	public static get instance(): CaptchaSingleton {
 		if (!CaptchaSingleton.#instance) {
-			console.log(
-				'Creating new CaptchaClient instance with key',
-				process.env.PRIVATE_CAPTCHA_KEY,
-			);
+			console.log('Creating new CaptchaClient instance');
 			CaptchaSingleton.#instance = new CaptchaSingleton();
 		}
 
