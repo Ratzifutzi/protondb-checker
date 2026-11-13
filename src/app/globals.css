@@ -1,1 +1,8 @@
 @import 'tailwindcss';
+
+/* Keeps keyboard focus clear of the sticky toolbar on the results page. Not
+   while focus is in the toolbar itself: it is always in view, and the extra
+   padding would make the page jump on every focus change inside it. */
+html:has([data-sticky-toolbar]:not(:focus-within)) {
+	scroll-padding-top: 7rem;
+}

@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
 	experimental: {
-		optimizePackageImports: ['@charka-ui/react'],
+		optimizePackageImports: ['@chakra-ui/react'],
 	},
 };
 

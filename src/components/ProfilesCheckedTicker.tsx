@@ -1,10 +1,21 @@
-"use client";
+'use client';
 
-import { StatsCache } from "@/app/api/stats/route";
-import { Box, Center, For, Spinner, Text, VStack } from "@chakra-ui/react";
-import { useEffect, useState, useRef, Fragment } from "react";
+import {
+	Box,
+	Center,
+	HStack,
+	Spinner,
+	Text,
+	VisuallyHidden,
+	VStack,
+} from '@chakra-ui/react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+
+import { pluralize } from '@/lib/format';
 
 const DELAY_DURATION = 500;
+
+type Stats = { games: number; profiles: number };
 
 function useCountUp(target: number, duration: number) {
 	const [count, setCount] = useState(0);
@@ -40,7 +51,9 @@ function useCountUp(target: number, duration: number) {
 
 			// Easing function for smooth animation (ease-out)
 			const easeOut = 1 - Math.pow(1 - progress, 3);
-			const currentCount = Math.floor(startValueRef.current + (target - startValueRef.current) * easeOut);
+			const currentCount = Math.floor(
+				startValueRef.current + (target - startValueRef.current) * easeOut,
+			);
 
 			setCount(currentCount);
 
@@ -61,102 +74,138 @@ function useCountUp(target: number, duration: number) {
 	return count;
 }
 
-function Ticker({ number, description, loading }: { number: number, description: string, loading: boolean }) {
-	const animatedNumber = useCountUp(number, 400);
-	const paddedNumber = String(animatedNumber).padStart(4, "0");
+/** A whole number of 0 or more. Anything else, such as -1 or text, gives 0. */
+function toCount(value: unknown): number {
+	return typeof value === 'number' && Number.isFinite(value) && value > 0
+		? Math.floor(value)
+		: 0;
+}
+
+type TickerProps = {
+	value: number;
+	/** Shown under the digits. */
+	caption: string;
+	/** Singular and plural noun for the screen reader label. */
+	one: string;
+	other: string;
+	loading: boolean;
+};
+
+function Ticker({ value, caption, one, other, loading }: TickerProps) {
+	const animatedNumber = useCountUp(value, 400);
+	const digits = String(animatedNumber).padStart(4, '0').split('');
 
 	return (
-		<>
-			<VStack gap={0}>
-				<Box
-					height={"100%"}
-					width={"100px"}
-					bg={"bg.muted"}
-					borderRadius={"md"}
-					border={"1px solid"}
-					borderColor={"border"}
-					display={"flex"}
-					flexDirection={"row"}
-					alignItems={"center"}
-				>
-					{!loading ? (
-						<For each={paddedNumber.split("")}>
-							{(item, index) => (
-								<Fragment key={`digit-group-${index}`}>
-									<Text
-										flex={1}
-										fontSize={"xl"}
-										fontFamily={"mono"}
-										textAlign={"center"}
-									>
-										{item}
-									</Text>
-									{index !== 3 && (
-										<Box
-											height={"full"}
-											width={"1px"}
-											backgroundColor={"border"}
-										/>
-									)}
-								</Fragment>
-							)}
-						</For>
-					) : (
-						<Center w={"full"} height={"full"}>
-							<Spinner />
-						</Center>
-					)}
-				</Box>
-				<Text fontSize={"x-small"} fontWeight={"bold"} color={"fg.muted"} mt={0}>
-					{description}
-				</Text>
-			</VStack>
-		</>
+		<VStack gap={1}>
+			{/*
+			 * The digit cells and the caption are hidden from screen readers.
+			 * They get one plain label instead, such as "1,234 games checked",
+			 * with the final number rather than the one that is counting up.
+			 */}
+			<Box
+				aria-hidden
+				display="flex"
+				alignItems="center"
+				h="11"
+				minW="100px"
+				bg="bg.muted"
+				borderWidth="1px"
+				borderColor="border"
+				rounded="md"
+			>
+				{loading ? (
+					<Center w="full" h="full">
+						<Spinner />
+					</Center>
+				) : (
+					digits.map((digit, index) => (
+						<Fragment key={index}>
+							{index > 0 && <Box h="full" w="1px" bg="border" />}
+							<Text
+								flex={1}
+								minW="5"
+								fontSize="xl"
+								fontFamily="mono"
+								textAlign="center"
+							>
+								{digit}
+							</Text>
+						</Fragment>
+					))
+				)}
+			</Box>
+			<Text aria-hidden fontSize="xs" fontWeight="bold" color="fg.muted">
+				{caption}
+			</Text>
+			{!loading && (
+				<VisuallyHidden>{`${pluralize(value, one, other)} checked`}</VisuallyHidden>
+			)}
+		</VStack>
 	);
 }
 
 export default function ProfilesCheckedTicker() {
-	const [data, setData] = useState<StatsCache | null>(null);
-	const [loading, setLoading] = useState<boolean>(true);
+	const [stats, setStats] = useState<Stats | null>(null);
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		const abortController = new AbortController();
+		const controller = new AbortController();
 
-		const fetchData = async () => {
-			setLoading(true);
+		const fetchStats = async () => {
 			try {
 				const response = await fetch('/api/stats', {
-					signal: abortController.signal,
+					signal: controller.signal,
 				});
-
 				if (!response.ok) {
-					throw new Error(`HTTP error! status: ${response.status}`);
+					throw new Error(
+						`Stats request failed with status ${response.status}`,
+					);
 				}
-
-				const result = await response.json();
-				setData(result);
-			} catch (err) {
-				console.log(err);
+				const body: unknown = await response.json();
+				const record =
+					typeof body === 'object' && body !== null
+						? (body as Record<string, unknown>)
+						: {};
+				setStats({
+					games: toCount(record.totalGames),
+					profiles: toCount(record.total),
+				});
+			} catch (error) {
+				// Leaving the page aborts the request on purpose.
+				if (!controller.signal.aborted) {
+					console.warn('Could not load the stats.', error);
+				}
 			} finally {
-				setLoading(false)
+				if (!controller.signal.aborted) setLoading(false);
 			}
 		};
 
-		fetchData();
+		void fetchStats();
 
-		// Cleanup function
 		return () => {
-			abortController.abort();
+			controller.abort();
 		};
 	}, []);
 
+	const games = stats?.games ?? 0;
+	const profiles = stats?.profiles ?? 0;
+
 	return (
-		<Box>
-			<Text textAlign={"center"} fontWeight={"bold"} mb={2}></Text>
-			<Box w={"100%"} height={"60px"} display={"flex"} justifyContent={"space-evenly"}>
-				<Ticker number={data?.totalGames || 0} description="Games Checked" loading={loading} />
-				<Ticker number={data?.total || 0} description="Profiles Checked" loading={loading} />
-			</Box>
-		</Box>
-	)
+		<HStack justify="space-evenly" align="start" gap={4}>
+			<Ticker
+				value={games}
+				caption="Games Checked"
+				one="game"
+				other="games"
+				loading={loading}
+			/>
+			<Ticker
+				value={profiles}
+				caption="Profiles Checked"
+				one="profile"
+				other="profiles"
+				loading={loading}
+			/>
+		</HStack>
+	);
 }

@@ -1,93 +1,49 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-'use client';
-
 import CardFooter from '@/components/partials/footer';
+import PageShell from '@/components/partials/pageShell';
 import SyncSteps from '@/components/partials/syncSteps';
-import { AbsoluteCenter, Button, Card, Center, HStack } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import ManualInput from './components/ManualInput';
-import LinkAccount from './components/LinkAccount';
-import { toaster } from '@/components/ui/toaster';
+import { Card } from '@chakra-ui/react';
+import type { Metadata } from 'next';
+import StartFlow from './components/StartFlow';
 
-export default function Start() {
-	const [syncMethod, setSyncMethod] = useState(0);
-	const [loading, setLoading] = useState<boolean>(true);
+export const metadata: Metadata = {
+	title: 'Find your Steam profile',
+};
 
-	useEffect(() => {
-		const params = new URLSearchParams(window.location.search)
+/** Longest SteamID value taken from the address. Profile links are short. */
+const MAX_STEAM_ID_LENGTH = 200;
 
-		const errorParam = params.get("error")
-		const steamIdParam = params.get("steamid")
+type SearchParams = Record<string, string | string[] | undefined>;
 
-		if (errorParam) {
-			toaster.error({
-				title: "Server Error",
-				description: "Steam experienced a server error and could not provide the logged in account. Please try again or use manual input.",
-				closable: true,
-				duration: 30_000,
-			})
-		}
+function firstValue(value: string | string[] | undefined): string | undefined {
+	return Array.isArray(value) ? value[0] : value;
+}
 
-		if (steamIdParam) {
-			try {
-				setSyncMethod(1)
-			} catch {
-				toaster.error({
-					title: "Client Error",
-					description: "Client Error. Please try manual input.",
-					closable: true,
-					duration: 30_000,
-				})
-			}
-		}
-
-		setLoading(false);
-	}, [setLoading])
+/**
+ * Step 1 of a check. `?steamid=` fills in the form and submits it on its own
+ * (Steam sign-in, "Check again", an expired session on /fetch). `?error=` is
+ * set when Steam sign-in failed.
+ */
+export default async function StartPage({
+	searchParams,
+}: {
+	searchParams: Promise<SearchParams>;
+}) {
+	const params = await searchParams;
+	const steamId =
+		firstValue(params.steamid)?.trim().slice(0, MAX_STEAM_ID_LENGTH) ||
+		undefined;
+	const steamSignInFailed = firstValue(params.error) !== undefined;
 
 	return (
-		<AbsoluteCenter>
-			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: "600px" }}>
-				<Card.Body>
-					<Card.Header mb={4}>
-						<SyncSteps currentStep={0} />
-					</Card.Header>
-					{syncMethod === 0 && (
-						<>
-							<Card.Description mb={8}>
-								Link your steam account to check the compatibility of your games
-								with ProtonDB. You can either use your SteamID or link your
-								account directly.
-							</Card.Description>
-							<Center>
-								<HStack width={{ base: "90%", md: "60%" }} gap={5}>
-									<Button
-										loading={loading}
-										onClick={() => {
-											setSyncMethod(1);
-										}}
-										flex={1}
-									>
-										Use SteamID
-									</Button>
-									<Button
-										loading={loading}
-										onClick={() => {
-											setSyncMethod(2);
-										}}
-										flex={1}
-									>
-										Link Account
-									</Button>
-								</HStack>
-							</Center>
-						</>
-					)}
-					{syncMethod === 1 && <ManualInput setSyncMethod={setSyncMethod} />}
-					{syncMethod === 2 && <LinkAccount setSyncMethod={setSyncMethod} />}
-				</Card.Body>
-
-				<CardFooter />
-			</Card.Root>
-		</AbsoluteCenter>
+		<PageShell>
+			<Card.Body gap={6}>
+				<SyncSteps currentStep={0} />
+				<StartFlow
+					initialSteamId={steamId}
+					steamSignInFailed={steamSignInFailed}
+				/>
+			</Card.Body>
+			<CardFooter />
+		</PageShell>
 	);
 }

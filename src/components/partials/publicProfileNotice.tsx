@@ -1,25 +1,33 @@
-import { Box, HStack, Text, VStack } from '@chakra-ui/react';
+import { Alert, Link, VisuallyHidden } from '@chakra-ui/react';
 
+const PRIVACY_SETTINGS_URL = 'https://steamcommunity.com/my/edit/settings';
+
+/** Reminds the user that Steam only shares the games of public profiles. */
 export default function PublicProfileNotice() {
 	return (
-		<Box
-			w={'full'}
-			minH={'50px'}
-			bg={'yellow.900'}
-			borderRadius={'md'}
-			border={'1px solid'}
-			borderColor={'yellow.500'}
-			mb={2}
-			p={2}
-		>
-			<HStack h={"100%"}>
-				<VStack gap={0} justifyContent={"left"} alignItems={"left"}>
-					<Text color={"yellow.500"} fontWeight={"black"} mb={0} textAlign={"left"}>Make sure your profile is public</Text>
-					<Text fontSize={'sm'} color={'yellow.600'}>
-						Your profile must be public to load your games. You can change this in your Steam privacy settings.
-					</Text>
-				</VStack>
-			</HStack>
-		</Box>
+		<Alert.Root status="warning">
+			<Alert.Indicator aria-hidden />
+			<Alert.Content>
+				<Alert.Title>Your game details need to be public</Alert.Title>
+				<Alert.Description>
+					Steam only shares the games of public profiles. You can change this in
+					your{' '}
+					<Link
+						href={PRIVACY_SETTINGS_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						variant="underline"
+						// Inline, so the link wraps with the sentence on narrow screens.
+						display="inline"
+						fontWeight="medium"
+						textDecorationColor="currentColor"
+					>
+						Steam privacy settings
+						<VisuallyHidden> (opens in a new tab)</VisuallyHidden>
+					</Link>
+					.
+				</Alert.Description>
+			</Alert.Content>
+		</Alert.Root>
 	);
 }

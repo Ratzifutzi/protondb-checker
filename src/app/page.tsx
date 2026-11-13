@@ -1,88 +1,150 @@
 'use client';
 
-import CardFooter from '@/components/partials/footer';
-import { ProtonDbArray } from '@/types/ProtonDbArray';
 import {
-	AbsoluteCenter,
+	Avatar,
 	Box,
-	Button,
 	Card,
-	Center,
+	createRecipeContext,
+	Heading,
 	HStack,
-	Separator,
-	VStack,
+	LinkBox,
+	LinkOverlay,
+	Span,
+	Stack,
+	Text,
+	type HTMLChakraProps,
+	type RecipeProps,
 } from '@chakra-ui/react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import ProfilesCheckedTicker from '../components/ProfilesCheckedTicker';
+import NextImage from 'next/image';
+import NextLink from 'next/link';
+import { LuChevronRight } from 'react-icons/lu';
 
-export default function Home() {
-	const [loading, setLoading] = useState<boolean>(true);
-	const [protonDbInfo, setProtonDbInfo] = useState<ProtonDbArray>([]);
-	const router = useRouter()
+import CardFooter from '@/components/partials/footer';
+import PageShell from '@/components/partials/pageShell';
+import ProfilesCheckedTicker from '@/components/ProfilesCheckedTicker';
+import { formatDate, pluralize } from '@/lib/format';
+import { type ResultsPreview, useResultsPreview } from '@/lib/storage';
 
-	useEffect(() => {
-		// eslint-disable-next-line react-hooks/set-state-in-effect
-		setLoading(true);
-		// Verify localstorage for profile and games
-		const protonDb = localStorage.getItem("protonData");
+type LinkButtonProps = HTMLChakraProps<'a', RecipeProps<'button'>>;
 
-		setProtonDbInfo(JSON.parse(protonDb!))
-		setLoading(false);
-	}, [router]);
+// A link with button styles. `<Button asChild>` would also put
+// type="button" on the link, which is not valid on an anchor.
+const { withContext: withButtonRecipe } = createRecipeContext({
+	key: 'button',
+});
+const LinkButton = withButtonRecipe<HTMLAnchorElement, LinkButtonProps>('a');
+
+/** The profile and date of the results saved on this device. */
+function LastCheck({ preview }: { preview: ResultsPreview }) {
+	const games = pluralize(preview.gameCount, 'game', 'games');
+	const checkedOn = preview.checkedAt ? formatDate(preview.checkedAt) : '';
 
 	return (
-		<AbsoluteCenter>
-			<Card.Root width={'320px'}>
-				<Card.Body>
-					<Box mb={5}>
-						<Center>
-							<Image
-								src="/proton-logo.svg"
-								alt="ProtonDB Logo"
-								width={94}
-								height={94}
-							/>
-						</Center>
-						<HStack alignItems={'center'} mb={'3'}>
-							<Separator flex={'1'} />
-							<Card.Title flexShrink={'0'} textAlign={'center'}>
-								ProtonDB Check
-							</Card.Title>
-							<Separator flex={'1'} />
-						</HStack>
-						<Card.Description mb={3}>
-							This simple tool allows you to check all games in your steam
-							library to see their ProtonDB Status, useful for Linux Gaming.
-						</Card.Description>
-						<ProfilesCheckedTicker />
-					</Box>
-					<Button
-						loading={loading}
-						mb={3}
-						onClick={() => {
-							setLoading(true);
-							router.push("/start");
+		<LinkBox
+			p={4}
+			borderWidth="1px"
+			borderColor="border"
+			rounded="l3"
+			transitionProperty="colors"
+			transitionDuration="fast"
+			_hover={{ bg: 'bg.muted', borderColor: 'border.emphasized' }}
+			// Fades in, since it only shows up once the page has loaded.
+			animationName="fade-in"
+			animationDuration="moderate"
+		>
+			<Heading as="h2" size="sm" color="fg.muted" mb={3}>
+				Last check
+			</Heading>
+			<HStack align="start" gap={3}>
+				{/* The nickname is right next to it, so the picture is decoration. */}
+				<Avatar.Root size="lg" aria-hidden>
+					<Avatar.Fallback name={preview.nickname} />
+					{preview.avatar ? <Avatar.Image src={preview.avatar} alt="" /> : null}
+				</Avatar.Root>
+				<Stack gap={0.5} minW={0} flex={1}>
+					<Text fontWeight="semibold" truncate>
+						{preview.nickname}
+					</Text>
+					<Text fontSize="sm" color="fg.muted">
+						{games}
+						{checkedOn ? (
+							<>
+								{' · checked '}
+								{/* Keeps the date on one line when the text wraps. */}
+								<Span whiteSpace="nowrap">{checkedOn}</Span>
+							</>
+						) : null}
+					</Text>
+					<LinkOverlay
+						asChild
+						alignSelf="start"
+						display="inline-flex"
+						alignItems="center"
+						gap={1}
+						mt={1}
+						fontSize="sm"
+						fontWeight="medium"
+						color="blue.fg"
+						// The overlay covers the whole block, so the focus ring goes
+						// around the block instead of around the link text.
+						outline="none"
+						_before={{ rounded: 'l3' }}
+						_focusVisible={{
+							_before: {
+								outlineWidth: '2px',
+								outlineStyle: 'solid',
+								outlineColor: 'blue.focusRing',
+								outlineOffset: '2px',
+							},
 						}}
 					>
-						Start{protonDbInfo && " over"}
-					</Button>
-					{(protonDbInfo && !loading) && (
-						<Button
-							loading={loading}
-							variant={"surface"}
-							onClick={() => {
-								setLoading(true);
-								router.push("/results");
-							}}
-						>
-							View previous results
-						</Button>
-					)}
-				</Card.Body>
-				<CardFooter />
-			</Card.Root>
-		</AbsoluteCenter>
+						<NextLink href="/results">
+							View results
+							<LuChevronRight aria-hidden />
+						</NextLink>
+					</LinkOverlay>
+				</Stack>
+			</HStack>
+		</LinkBox>
+	);
+}
+
+export default function Home() {
+	// Undefined during the server render and hydration, null when nothing is
+	// saved. Both render nothing, so first visits show no flash.
+	const preview = useResultsPreview();
+
+	return (
+		<PageShell width="narrow">
+			<Card.Body gap={6}>
+				<Stack align="center" textAlign="center" gap={3}>
+					<Box boxSize={{ base: '72px', sm: '94px' }}>
+						<NextImage
+							src="/proton-logo.svg"
+							alt=""
+							width={94}
+							height={94}
+							loading="eager"
+							style={{ width: '100%', height: '100%' }}
+						/>
+					</Box>
+					<Heading as="h1" size="2xl">
+						ProtonDB Check
+					</Heading>
+					<Text color="fg.muted">
+						Check how well the games in your Steam library run on Linux, based
+						on ProtonDB reports.
+					</Text>
+				</Stack>
+				<ProfilesCheckedTicker />
+				<Stack gap={4}>
+					<LinkButton asChild size="lg" w="full">
+						<NextLink href="/start">Check a Steam library</NextLink>
+					</LinkButton>
+					{preview ? <LastCheck preview={preview} /> : null}
+				</Stack>
+			</Card.Body>
+			<CardFooter />
+		</PageShell>
 	);
 }

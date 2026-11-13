@@ -21,26 +21,17 @@ const CachedResults: StatsCache = {
 export async function GET() {
 	const now = Date.now();
 	const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-	const foreverAgo = new Date(0);
 
 	const shouldRefresh = now - CachedResults.age.getTime() > CACHE_DURATION_MS;
 	if (shouldRefresh) {
 		logger.info('Refreshing cache...');
 
-		let total = 0;
-		let lastMonth = 0;
-
-		const totalDocuments = await ScanLog.find({
-			date: { $gte: foreverAgo },
-		});
-		total = totalDocuments.length;
-
-		const lastMonthDocuments = await ScanLog.find({
-			date: { $gte: thirtyDaysAgo },
-		});
-		lastMonth = lastMonthDocuments.length;
-
-		const totalGamesCount = await CachedProtonGame.countDocuments();
+		// Count on the server instead of loading every log document.
+		const [total, lastMonth, totalGamesCount] = await Promise.all([
+			ScanLog.estimatedDocumentCount().exec(),
+			ScanLog.countDocuments({ date: { $gte: thirtyDaysAgo } }).exec(),
+			CachedProtonGame.countDocuments().exec(),
+		]);
 
 		CachedResults.age = new Date(Date.now());
 		CachedResults.total = total;

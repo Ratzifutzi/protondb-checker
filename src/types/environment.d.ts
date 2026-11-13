@@ -12,6 +12,10 @@ declare global {
 			// Etc
 			HOSTED_DOMAIN: string;
 			STEAM_API_KEY: string;
+
+			// ProtonDB API base URL, https://www.protondb.com when unset.
+			// Point it at a local mock for tests.
+			PROTONDB_API_BASE?: string;
 		}
 	}
 }

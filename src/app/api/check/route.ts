@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
 
 	// Verify if IP ratelimits are met
 	// 15 users / IP / 60 minutes allowed
-	const ipRateLimitDocument = await ScanLog.find({
+	const ipScanCount = await ScanLog.countDocuments({
 		ipAddress: getClientIp(req.headers),
-		date: {$gte: sixtyMinutesAgo}
-	})
-	if (ipRateLimitDocument.length >= 15) {
-		console.log("IP is ratelimited");
+		date: { $gte: sixtyMinutesAgo },
+	});
+	if (ipScanCount >= 15) {
+		console.log('IP is ratelimited');
 		return new Response(getClientIp(req.headers), { status: 429 });
 	}
 
@@ -66,16 +66,16 @@ export async function POST(req: NextRequest) {
 
 	// Verify if profile ratelimits are met
 	// 5 profile requests / 60 minutes allowed
-	const profileRateLimitDocument = await ScanLog.find({
+	const profileScanCount = await ScanLog.countDocuments({
 		targetProfile: steamid,
-		date: {$gte: sixtyMinutesAgo}
-	})
-	if (profileRateLimitDocument.length >= 5) {
-		console.log("Profile is ratelimited");
+		date: { $gte: sixtyMinutesAgo },
+	});
+	if (profileScanCount >= 5) {
+		console.log('Profile is ratelimited');
 		return new Response('Profile', { status: 429 });
 	}
 
-		// Fetch profile
+	// Fetch profile
 	try {
 		const res = await steam.getUserSummary(steamid);
 		profile = res;
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 		date: new Date(),
 		ipAddress: getClientIp(req.headers),
 		targetProfile: steamid,
-	})
+	});
 	await logEvent.save();
 
 	// Return

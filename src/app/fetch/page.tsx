@@ -1,260 +1,189 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
+import { Card, HStack, Skeleton, Stack } from '@chakra-ui/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+
 import CardFooter from '@/components/partials/footer';
-import PersonaState from '@/components/partials/personaState';
+import PageShell from '@/components/partials/pageShell';
 import SyncSteps from '@/components/partials/syncSteps';
 import { toaster } from '@/components/ui/toaster';
 import {
-	AbsoluteCenter,
-	Alert,
-	Box,
-	Card,
-	Center,
-	HStack,
-	IconButton,
-	Image,
-	Progress,
-	Skeleton,
-	Text,
-	VStack,
-} from '@chakra-ui/react';
-import { CheckIcon, XIcon } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import {
-	Game,
-	GameInfo,
-	GameInfoExtended,
-	UserPlaytime,
-	UserSummary,
-} from 'steamapi';
+	createCheckState,
+	getCheckProgress,
+	runCheck,
+	type CheckProgressEvent,
+	type CheckState,
+} from '@/lib/checkLibrary';
+import { saveResults, useStoredCheckInput } from '@/lib/storage';
+import type { CheckInput } from '@/types/proton';
 
-export default function Fetch() {
-	const [games, setGames] = useState<
-		UserPlaytime<Game | GameInfo | GameInfoExtended>[] | null
-	>(null);
-	const [profile, setProfile] = useState<UserSummary | null>(null);
+import CheckProgress from './components/CheckProgress';
+import ProfileConfirm from './components/ProfileConfirm';
 
-	const [progress, setProgress] = useState<number>(-1);
-	const [gamesCompleted, setGamesCompleted] = useState<number>(0);
-	const [totalGames, setTotalGames] = useState<number>(0);
-	const [, setErrors] = useState<string[]>([]);
+type Phase = 'confirm' | 'checking' | 'paused' | 'saving';
 
+/** A started check: the input it was started with, and its progress. */
+type ActiveCheck = { input: CheckInput; state: CheckState };
+
+/** Stands in for the profile while it loads from storage. */
+function ConfirmSkeleton() {
+	return (
+		<Stack gap={5}>
+			<Skeleton h={8} w="16rem" maxW="full" />
+			<HStack gap={4} p={4} borderWidth="1px" borderColor="border" rounded="l3">
+				<Skeleton boxSize={16} flexShrink={0} rounded="l3" />
+				<Stack gap={2} flex={1}>
+					<Skeleton h={6} w="60%" />
+					<Skeleton h={4} w="30%" />
+				</Stack>
+			</HStack>
+			<Skeleton h={10} w={{ base: 'full', sm: '12rem' }} rounded="l2" />
+		</Stack>
+	);
+}
+
+export default function FetchPage() {
 	const router = useRouter();
+	// undefined while loading, null when /start staged nothing to check.
+	const input = useStoredCheckInput();
+	const [phase, setPhase] = useState<Phase>('confirm');
+	const [progress, setProgress] = useState<CheckProgressEvent | null>(null);
+	// Set after Cancel, so the confirm view takes the focus back.
+	const [cancelled, setCancelled] = useState(false);
+
+	// The running check keeps its own copy of the input: saveResults()
+	// removes the staged input, so the live value turns null at the end.
+	const checkRef = useRef<ActiveCheck | null>(null);
+	const runRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
-		// Verify localstorage for profile and games
-		const games = localStorage.getItem('games');
-		const profile = localStorage.getItem('profile');
+		if (phase === 'confirm' && input === null) router.replace('/start');
+	}, [phase, input, router]);
 
-		if (!games || !profile) {
-			router.push('/start');
-		}
+	// Stop the requests when the page goes away.
+	useEffect(() => () => runRef.current?.abort(), []);
 
-		setGames(JSON.parse(games!));
-		setProfile(JSON.parse(profile!));
-		setProgress(-1);
-	}, [router]);
-
-	// Prevent closing page
+	// Ask before the tab closes or reloads while the check runs.
 	useEffect(() => {
-		if (progress > 0 && progress < 100) {
-			window.onbeforeunload = () => {
-				return 'Closing this page will reset your progress.';
-			};
-		} else {
-			window.onbeforeunload = null;
+		if (phase !== 'checking') return;
+		const warn = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			// Older browsers only ask when returnValue is set.
+			event.returnValue = true;
+		};
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	}, [phase]);
+
+	async function run(check: ActiveCheck) {
+		runRef.current?.abort();
+		const controller = new AbortController();
+		runRef.current = controller;
+		setPhase('checking');
+		setProgress(getCheckProgress(check.state));
+
+		const outcome = await runCheck(check.state, {
+			signal: controller.signal,
+			onProgress: setProgress,
+		});
+		// Cancel or a newer run took over.
+		if (runRef.current !== controller) return;
+		runRef.current = null;
+
+		switch (outcome.status) {
+			case 'done':
+				setPhase('saving');
+				// When storage is full the results stay in memory for this tab
+				// and the results page says so, so go on either way.
+				saveResults({
+					profile: check.input.profile,
+					games: check.input.games,
+					summaries: [...check.state.results.values()],
+					failed: [...check.state.failed],
+					checkedAt: new Date().toISOString(),
+				});
+				router.replace('/results');
+				break;
+			case 'expired':
+				toaster.create({
+					type: 'warning',
+					title: 'Session expired',
+					description: 'Please solve the captcha again to continue.',
+					duration: 10_000,
+					closable: true,
+				});
+				router.push(
+					`/start?steamid=${encodeURIComponent(check.input.profile.steamID)}`,
+				);
+				break;
+			case 'error':
+				console.error('The check stopped:', outcome.reason);
+				setPhase('paused');
+				break;
+			case 'cancelled':
+				// Only the unmount cleanup gets here. If React kept the page
+				// around hidden, it comes back paused and can go on.
+				setPhase('paused');
+				break;
 		}
-	}, [progress]);
+	}
 
-	async function startFetch() {
-		const gamesToProcess = games || [];
-		const total = gamesToProcess.length;
+	function startCheck() {
+		if (!input) return;
+		const check: ActiveCheck = {
+			input,
+			state: createCheckState(input.games.map((entry) => entry.game.id)),
+		};
+		checkRef.current = check;
+		void run(check);
+	}
 
-		setProgress(0);
-		setTotalGames(total);
-		setGamesCompleted(0);
-		setErrors([]);
+	function retryCheck() {
+		if (checkRef.current) void run(checkRef.current);
+	}
 
-		if (total === 0) {
-			setProgress(100);
-			return;
-		}
+	function cancelCheck() {
+		runRef.current?.abort();
+		runRef.current = null;
+		// The next check starts fresh.
+		checkRef.current = null;
+		setProgress(null);
+		setPhase('confirm');
+		setCancelled(true);
+	}
 
-		const results = [];
-		for (const [index, game] of gamesToProcess.entries()) {
-			const response = await fetch('/api/fetch', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ appId: game.game.id }),
-			});
-
-			if (!response.ok) {
-				if (response.status === 403) {
-					toaster.error({
-						title: 'Session expired',
-						description: 'Please fill out the form again.',
-						duration: 15_000,
-						closable: true,
-					});
-					router.push('/start');
-					return;
-				}
-
-				setErrors((prev) => [
-					...prev,
-					`Failed to fetch ProtonDB data for app ${game.game.id}`,
-				]);
-			} else {
-				const data = await response.json();
-				results.push(data);
-			}
-
-			const processed = index + 1;
-			setGamesCompleted(processed);
-			setProgress((processed / total) * 100);
-		}
-
-		console.log(results);
-		localStorage.setItem('protonData', JSON.stringify(results));
-		router.push('/results');
+	let content: ReactNode = null;
+	if (phase === 'confirm') {
+		content = input ? (
+			<ProfileConfirm
+				profile={input.profile}
+				gameCount={input.games.length}
+				onConfirm={startCheck}
+				focusHeading={cancelled}
+			/>
+		) : (
+			// Also shown for null, while the redirect to /start runs.
+			<ConfirmSkeleton />
+		);
+	} else if (progress) {
+		content = (
+			<CheckProgress
+				view={phase}
+				progress={progress}
+				onCancel={cancelCheck}
+				onRetry={retryCheck}
+			/>
+		);
 	}
 
 	return (
-		<AbsoluteCenter>
-			<Card.Root width={'90vw'} minHeight={'350px'} md={{ width: '600px' }}>
-				<Card.Body>
-					<Card.Header mb={4}>
-						<SyncSteps currentStep={1} />
-					</Card.Header>
-					{progress === -1 && (
-						<Center flexDirection={'column'} w={'full'}>
-							<Card.Description mb={4} textAlign={'center'}>
-								Is this your profile?
-							</Card.Description>
-
-							{games?.length == 0 && (
-								<Alert.Root mb={3} status={'error'}>
-									<Alert.Indicator />
-									<Alert.Content>
-										<Alert.Title fontWeight={'black'}>
-											Games are hidden by default on Steam.
-										</Alert.Title>
-										<Alert.Description>
-											You can change your Steam profile{' '}
-											<Text asChild textDecor={'underline'} fontWeight={'bold'}>
-												<Link
-													href={'https://steamcommunity.com/my/edit/settings'}
-												>
-													privacy settings
-												</Link>
-											</Text>
-											:
-											<Box as="ul" listStyleType="circle" mb={1} mt={1}>
-												<li>
-													From your Steam Profile, click the Edit Profile link
-													under your displayed badge
-												</li>
-												<li>Click the My Privacy Settings tab</li>
-												<li>Set Game details to Public</li>
-												<li>
-													Uncheck Always keep my total playtime private option
-												</li>
-											</Box>
-											<Text fontWeight={'black'}>
-												AFTER CHANGING THE SETTINGS: <br /> Click Start Over in
-												the top left, and fill out the form again. This page
-												will not update, until you do that.x
-											</Text>
-										</Alert.Description>
-									</Alert.Content>
-								</Alert.Root>
-							)}
-							<HStack maxWidth={'100%'}>
-								<Card.Root flexDirection={'row'} overflow={'hidden'} w={'sm'}>
-									<Skeleton loading={games === null} borderRadius={0}>
-										<Image
-											src={profile?.avatar.large}
-											alt="Profile Avatar"
-											height={'97px'}
-											minW={'97px'}
-										/>
-									</Skeleton>
-
-									<Card.Body>
-										<Card.Title>
-											<Skeleton w={'50%'} h={'28px'} loading={games === null}>
-												{profile && (
-													<Link href={profile.url} target="_blank">
-														<HStack>
-															{profile?.nickname}{' '}
-															<PersonaState
-																persona={profile?.personaState as 0 | 1 | 3}
-															/>
-														</HStack>
-													</Link>
-												)}
-											</Skeleton>
-										</Card.Title>
-										<Card.Description
-											color={games?.length === 0 ? 'fg.error' : ''}
-										>
-											{games?.length || 0} games
-											<br />
-										</Card.Description>
-									</Card.Body>
-								</Card.Root>
-
-								<VStack display={'flex'}>
-									<IconButton
-										variant={'surface'}
-										onClick={startFetch}
-										disabled={!games || games?.length == 0}
-									>
-										<CheckIcon />
-									</IconButton>
-									<IconButton
-										variant={'outline'}
-										onClick={() => {
-											router.push('/start');
-										}}
-									>
-										<XIcon />
-									</IconButton>
-								</VStack>
-							</HStack>
-						</Center>
-					)}
-					{progress >= 0 && (
-						<Center>
-							<VStack maxWidth={'90%'}>
-								<Card.Description>
-									Please do not close this window while your games are being
-									checked.
-								</Card.Description>
-								<Progress.Root
-									value={progress}
-									w={'400px'}
-									maxW={'100%'}
-									mt={12}
-								>
-									<Progress.Label mb="2">
-										Checking games ({gamesCompleted}/{totalGames})
-									</Progress.Label>
-									<Progress.Track>
-										<Progress.Range />
-									</Progress.Track>
-								</Progress.Root>
-							</VStack>
-						</Center>
-					)}
-				</Card.Body>
-				<CardFooter />
-			</Card.Root>
-		</AbsoluteCenter>
+		<PageShell>
+			<Card.Body gap={6}>
+				<SyncSteps currentStep={1} startOverHref="/start" />
+				{content}
+			</Card.Body>
+			<CardFooter />
+		</PageShell>
 	);
 }

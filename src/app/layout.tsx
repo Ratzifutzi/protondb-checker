@@ -81,12 +81,6 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<head>
-				<script
-					defer
-					src="https://captcha.hyper-tech.ch/widget/js/privatecaptcha.js"
-				></script>
-			</head>
 			<body>
 				<Provider>
 					<Toaster />
